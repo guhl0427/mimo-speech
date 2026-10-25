@@ -7,9 +7,13 @@
     "dev": "concurrently -k -n api,web -c red,cyan \"npm:dev:server\" \"npm:dev:client\"",
     "dev:client": "vite",
     "dev:server": "tsx watch server/src/index.ts",
+    "dev:site": "concurrently -k -n fn,web -c magenta,cyan \"npm:dev:function\" \"npm:dev:client:site\"",
+    "dev:function": "tsx sites/dev/server.ts",
+    "dev:client:site": "vite --mode site",
     "build": "tsc -p server/tsconfig.json && vite build",
+    "build:site": "vite build --mode site --outDir dist-site",
     "start": "node server/dist/index.js",
-    "typecheck": "tsc -p server/tsconfig.json --noEmit && tsc -p client/tsconfig.json --noEmit"
+    "typecheck": "tsc -p server/tsconfig.json --noEmit && tsc -p client/tsconfig.json --noEmit && tsc -p sites/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

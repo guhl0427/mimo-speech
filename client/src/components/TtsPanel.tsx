@@ -103,7 +103,11 @@ export function TtsPanel({
 
   async function handleGenerate() {
     if (!canRun) {
-      setError("服务端尚未配置 MIMO_API_KEY，配置后即可生成。");
+      setError(
+        config.keyMode === "hybrid"
+          ? "请先在设置中填写 MiMo Key。"
+          : "服务端尚未配置 MIMO_API_KEY，配置后即可生成。",
+      );
       return;
     }
     if (!text.trim()) {
@@ -279,7 +283,9 @@ export function TtsPanel({
         <div className="action-row">
           <p className="action-note">
             {config.mode === "unconfigured"
-              ? "配置 MIMO_API_KEY 后即可生成语音。"
+              ? config.keyMode === "hybrid"
+                ? "填写 MiMo Key 后即可生成语音。"
+                : "配置 MIMO_API_KEY 后即可生成语音。"
               : config.mode === "mock"
                 ? "当前为 Mock 模式，生成的是本地示例音频，不会调用 MiMo。"
                 : "当前由 MiMo TTS 提供，限时免费。生成后可试听并下载音频；若官方结束免费，以官方计费为准。"}
@@ -296,7 +302,13 @@ export function TtsPanel({
               type="button"
               disabled={blocked}
               onClick={handleGenerate}
-              title={!canRun ? "需要先配置 MIMO_API_KEY" : undefined}
+              title={
+                !canRun
+                  ? config.keyMode === "hybrid"
+                    ? "需要先在设置中填写 MiMo Key"
+                    : "需要先配置 MIMO_API_KEY"
+                  : undefined
+              }
             >
               <span className="btn-label">{generating ? "正在合成" : "生成语音"}</span>
               <span className="btn-arrow" aria-hidden="true">

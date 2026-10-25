@@ -51,6 +51,41 @@ export function ConfigBanner({
   }
 
   if (config.mode === "unconfigured") {
+    if (config.keyMode === "hybrid") {
+      return (
+        <div className="config-banner" role="status">
+          <span className="config-banner-kicker">SETUP</span>
+          <div className="banner-body">
+            <p>
+              <strong>还没有可用的 MiMo Key。</strong>
+              打开设置填入你自己的 Key 即可开始使用。
+            </p>
+          </div>
+          <button
+            className="text-link banner-action"
+            type="button"
+            onClick={onSettings}
+          >
+            打开设置
+          </button>
+        </div>
+      );
+    }
+
+    if (!config.keyEditable) {
+      return (
+        <div className="config-banner" role="status">
+          <span className="config-banner-kicker">SETUP</span>
+          <div className="banner-body">
+            <p>
+              <strong>站点还没有可用的 MiMo Key。</strong>
+              完成服务端配置后刷新页面即可使用。
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="config-banner" role="status">
         <span className="config-banner-kicker">SETUP</span>

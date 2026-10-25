@@ -1,31 +1,46 @@
 import type {
   AppConfig,
+  AppKeyMode,
+  KeySource,
   SettingsApiResult,
   SttApiResult,
   TtsApiResult,
   VerifyApiResult,
 } from "../types";
+import { getBrowserKey } from "./browserKey";
+import { ApiError } from "./errors";
+import { synthesizeDirect, testDirectKey } from "./mimoDirect";
 
-export class ApiError extends Error {
-  readonly code: string;
-  readonly status: number;
-  readonly requestId?: string;
-  readonly retryAfter?: number;
+export { ApiError } from "./errors";
 
-  constructor(
-    message: string,
-    status = 0,
-    code = "UNKNOWN_ERROR",
-    requestId?: string,
-    retryAfter?: number,
-  ) {
-    super(message);
-    this.name = "ApiError";
-    this.code = code;
-    this.status = status;
-    this.requestId = requestId;
-    this.retryAfter = retryAfter;
-  }
+const API_BASE = (import.meta.env.VITE_API_BASE || "/api").replace(/\/+$/, "");
+
+function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
+let activeKeyMode: AppKeyMode = "server";
+
+function withBrowserKey(config: AppConfig): AppConfig {
+  if (config.keyMode !== "hybrid") return config;
+
+  const browserKey = getBrowserKey();
+  const serverKeyConfigured = config.serverKeyConfigured;
+  const keySource: KeySource = browserKey
+    ? "browser"
+    : serverKeyConfigured
+      ? "server"
+      : "none";
+
+  return {
+    ...config,
+    keySource,
+    keyHint: browserKey.length >= 8 ? browserKey.slice(-4) : null,
+    envConfigured: serverKeyConfigured,
+    mode: keySource === "none" ? "unconfigured" : "live",
+    mimoConfigured: keySource !== "none",
+    mock: false,
+  };
 }
 
 async function throwApiError(response: Response): Promise<never> {
@@ -66,12 +81,14 @@ function networkError(error: unknown): never {
 
 export async function fetchConfig(signal?: AbortSignal): Promise<AppConfig> {
   try {
-    const response = await fetch("/api/config", {
+    const response = await fetch(apiUrl("/config"), {
       cache: "no-store",
       signal,
     });
     if (!response.ok) await throwApiError(response);
-    return (await response.json()) as AppConfig;
+    const config = (await response.json()) as AppConfig;
+    activeKeyMode = config.keyMode === "hybrid" ? "hybrid" : "server";
+    return withBrowserKey(config);
   } catch (error) {
     return networkError(error);
   }
@@ -88,8 +105,20 @@ export async function generateSpeech(
   input: GenerateSpeechInput,
   signal?: AbortSignal,
 ): Promise<TtsApiResult> {
+  const browserKey = activeKeyMode === "hybrid" ? getBrowserKey() : "";
+  if (browserKey) {
+    const result = await synthesizeDirect(input, browserKey, signal);
+    return {
+      blob: result.blob,
+      mime: result.mime,
+      provider: "mimo",
+      mock: false,
+      requestId: result.requestId,
+    };
+  }
+
   try {
-    const response = await fetch("/api/tts", {
+    const response = await fetch(apiUrl("/tts"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
@@ -129,7 +158,7 @@ export async function transcribeAudio(input: TranscribeInput): Promise<SttApiRes
     form.append("language", input.language);
     form.append("durationSec", String(input.durationSec));
 
-    const response = await fetch("/api/stt", {
+    const response = await fetch(apiUrl("/stt"), {
       method: "POST",
       body: form,
       signal: input.signal,
@@ -144,7 +173,7 @@ export async function transcribeAudio(input: TranscribeInput): Promise<SttApiRes
 
 export async function saveMimoKey(apiKey: string): Promise<SettingsApiResult> {
   try {
-    const response = await fetch("/api/settings/mimo-key", {
+    const response = await fetch(apiUrl("/settings/mimo-key"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ apiKey }),
@@ -158,7 +187,7 @@ export async function saveMimoKey(apiKey: string): Promise<SettingsApiResult> {
 
 export async function clearMimoKey(): Promise<SettingsApiResult> {
   try {
-    const response = await fetch("/api/settings/mimo-key", {
+    const response = await fetch(apiUrl("/settings/mimo-key"), {
       method: "DELETE",
     });
     if (!response.ok) await throwApiError(response);
@@ -169,8 +198,14 @@ export async function clearMimoKey(): Promise<SettingsApiResult> {
 }
 
 export async function testMimoKey(): Promise<VerifyApiResult> {
+  const browserKey = activeKeyMode === "hybrid" ? getBrowserKey() : "";
+  if (browserKey) {
+    const result = await testDirectKey(browserKey);
+    return { ok: true, latencyMs: result.latencyMs };
+  }
+
   try {
-    const response = await fetch("/api/settings/mimo-key/test", {
+    const response = await fetch(apiUrl("/settings/mimo-key/test"), {
       method: "POST",
     });
     if (!response.ok) await throwApiError(response);

@@ -2,7 +2,9 @@ export type Mode = "stt" | "tts";
 
 export type AppMode = "live" | "mock" | "unconfigured";
 
-export type KeySource = "settings" | "env" | "none";
+export type KeySource = "settings" | "env" | "browser" | "server" | "none";
+
+export type AppKeyMode = "server" | "hybrid";
 
 export type Voice = {
   id: string;
@@ -21,6 +23,10 @@ export type Limits = {
   pricePerHourCny: number;
 };
 
+export type AppFeatures = {
+  stt: boolean;
+};
+
 export type AppConfig = {
   mode: AppMode;
   mimoConfigured: boolean;
@@ -28,6 +34,10 @@ export type AppConfig = {
   keySource: KeySource;
   keyHint: string | null;
   envConfigured: boolean;
+  keyEditable: boolean;
+  keyMode: AppKeyMode;
+  serverKeyConfigured: boolean;
+  features: AppFeatures;
   voices: Voice[];
   limits: Limits;
   tts: { model: string; free: string };
@@ -133,6 +143,10 @@ export const FALLBACK_CONFIG: AppConfig = {
   keySource: "none",
   keyHint: null,
   envConfigured: false,
+  keyEditable: true,
+  keyMode: "server",
+  serverKeyConfigured: false,
+  features: { stt: true },
   voices: DEFAULT_VOICES,
   limits: DEFAULT_LIMITS,
   tts: { model: "mimo-v2.5-tts", free: "limited" },

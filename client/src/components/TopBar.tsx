@@ -19,6 +19,14 @@ function statusFor(config: AppConfig, loading: boolean, error: string | null) {
 }
 
 function keyTitle(config: AppConfig): string {
+  if (config.keySource === "browser") {
+    return config.keyHint
+      ? `使用此浏览器保存的个人 Key（尾号 ${config.keyHint}）`
+      : "使用此浏览器保存的个人 Key";
+  }
+  if (config.keySource === "server") {
+    return "使用站点默认 Key（兜底）";
+  }
   if (config.keySource === "settings") {
     return config.keyHint
       ? `使用设置中的个人 Key（尾号 ${config.keyHint}）`
@@ -29,7 +37,9 @@ function keyTitle(config: AppConfig): string {
       ? `使用服务端 .env 中的 Key（尾号 ${config.keyHint}）`
       : "使用服务端 .env 中的 Key";
   }
-  return "尚未配置 MiMo API Key，打开设置填写";
+  return config.keyMode === "hybrid"
+    ? "尚未配置 MiMo Key，打开设置填写个人 Key"
+    : "尚未配置 MiMo API Key，打开设置填写";
 }
 
 export function TopBar({ config, loading, error, onSettings, onInfo }: Props) {
@@ -37,7 +47,11 @@ export function TopBar({ config, loading, error, onSettings, onInfo }: Props) {
 
   return (
     <header className="topbar">
-      <a className="brand" href="#stt" aria-label="声息，返回语音转文字">
+      <a
+        className="brand"
+        href={config.features.stt ? "#stt" : "#tts"}
+        aria-label="声息，返回语音工作台"
+      >
         <span className="seal" aria-hidden="true">
           声
         </span>

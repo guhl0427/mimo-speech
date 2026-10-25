@@ -95,6 +95,12 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (config.features.stt || mode === "tts") return;
+    setMode("tts");
+    window.history.replaceState(null, "", "#tts");
+  }, [config.features.stt, mode]);
+
+  useEffect(() => {
     return () => {
       if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
       if (playerUrlRef.current) URL.revokeObjectURL(playerUrlRef.current);
@@ -219,20 +225,37 @@ export function App() {
     }
     if (configLoading) return { text: "正在连接 MiMo 服务…", warning: false };
     if (config.mode === "live") {
+      const keyLabel =
+        config.keySource === "browser"
+          ? "个人 Key（浏览器）"
+          : config.keySource === "server"
+            ? "站点默认 Key"
+            : config.keySource === "settings"
+              ? "个人 Key"
+              : "服务端 Key";
       return {
-        text: `MiMo API 已连接 · ${
-          config.keySource === "settings" ? "个人 Key" : "服务端 Key"
-        } · 音频不落盘`,
+        text: `MiMo API 已连接 · ${keyLabel} · 音频不落盘`,
         warning: false,
       };
     }
     if (config.mode === "mock") {
       return { text: "开发 Mock 模式 · 结果均为本地示例", warning: true };
     }
-    return {
-      text: "尚未配置 MiMo API Key · 打开右上角设置填写",
-      warning: true,
-    };
+    if (config.keyMode === "hybrid") {
+      return {
+        text: "尚未配置 MiMo Key · 打开右上角设置填写个人 Key",
+        warning: true,
+      };
+    }
+    return config.keyEditable
+      ? {
+          text: "尚未配置 MiMo API Key · 打开右上角设置填写",
+          warning: true,
+        }
+      : {
+          text: "站点尚未配置 MiMo Key · 请联系站点管理员",
+          warning: true,
+        };
   })();
 
   return (
@@ -253,7 +276,9 @@ export function App() {
         <Intro config={config} />
 
         <section className="workspace" aria-label="语音工作台">
-          <ModeSwitch config={config} mode={mode} onChange={changeMode} />
+          {config.features.stt ? (
+            <ModeSwitch config={config} mode={mode} onChange={changeMode} />
+          ) : null}
 
           <ConfigBanner
             config={config}
@@ -272,13 +297,15 @@ export function App() {
             onToast={showToast}
           />
 
-          <SttPanel
-            config={config}
-            active={mode === "stt"}
-            historySeed={historySeed?.mode === "stt" ? historySeed : null}
-            onCompleted={handleSttCompleted}
-            onToast={showToast}
-          />
+          {config.features.stt ? (
+            <SttPanel
+              config={config}
+              active={mode === "stt"}
+              historySeed={historySeed?.mode === "stt" ? historySeed : null}
+              onCompleted={handleSttCompleted}
+              onToast={showToast}
+            />
+          ) : null}
 
           <RecentPanel
             items={historyItems}
@@ -290,7 +317,12 @@ export function App() {
         </section>
       </main>
 
-      <Footer statusText={status.text} warning={status.warning} onInfo={() => setInfoOpen(true)} />
+      <Footer
+        statusText={status.text}
+        warning={status.warning}
+        sttEnabled={config.features.stt}
+        onInfo={() => setInfoOpen(true)}
+      />
 
       <InfoDialog
         open={infoOpen}

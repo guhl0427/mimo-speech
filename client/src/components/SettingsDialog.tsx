@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Eye, EyeOff, X } from "lucide-react";
 import type { AppConfig } from "../types";
 import { clearMimoKey, saveMimoKey, testMimoKey } from "../lib/api";
+import {
+  clearBrowserKey,
+  getBrowserKey,
+  saveBrowserKey,
+} from "../lib/browserKey";
 
 type Props = {
   open: boolean;
@@ -60,36 +65,57 @@ export function SettingsDialog({
   }, [open]);
 
   const busy = saving || clearing;
+  const browserMode = config.keyMode === "hybrid";
+  const browserKeyActive = config.keySource === "browser";
   const configured = config.keySource !== "none";
-  const sourceLabel =
-    config.keySource === "settings"
-      ? "个人 Key"
-      : config.keySource === "env"
-        ? "服务端 .env"
-        : "尚未配置";
-  const sourceDetail =
-    config.keySource === "none"
-      ? "填入 Key 后立即启用 TTS / ASR"
-      : config.keyHint
-        ? `尾号 ${config.keyHint} · 不回显完整 Key`
-        : "已配置";
+
+  const sourceLabel = browserKeyActive
+    ? "个人 Key（浏览器）"
+    : config.keySource === "server"
+      ? "站点默认 Key（兜底）"
+      : config.keySource === "settings"
+        ? "个人 Key"
+        : config.keySource === "env"
+          ? "服务端 .env"
+          : "尚未配置";
+
+  const sourceDetail = browserKeyActive
+    ? config.keyHint
+      ? `尾号 ${config.keyHint} · 只保存在此浏览器`
+      : "只保存在此浏览器"
+    : config.keySource === "server"
+      ? "由站点服务端提供，不回显 Key"
+      : config.keySource === "none"
+        ? browserMode
+          ? "填入个人 Key 后即可使用"
+          : "填入 Key 后立即启用 TTS / ASR"
+        : config.keyHint
+          ? `尾号 ${config.keyHint} · 不回显完整 Key`
+          : "已配置";
 
   async function runTest(saved: boolean) {
     setTesting(true);
     setVerify(null);
+    const usingBrowserKey = browserMode && Boolean(getBrowserKey());
+    const sourceName = browserMode
+      ? usingBrowserKey
+        ? "个人 Key"
+        : "站点默认 Key"
+      : "当前 Key";
+
     try {
       const result = await testMimoKey();
       setVerify({
         tone: "ok",
-        text: saved
-          ? `连接正常（${result.latencyMs}ms），新 Key 已生效。`
-          : `连接正常（${result.latencyMs}ms），当前 Key 可用。`,
+        text: `${saved ? "新 Key 已生效，" : ""}${sourceName}连接正常（${result.latencyMs}ms）。`,
       });
     } catch (testError) {
       const message = errorMessage(testError);
       setVerify({
         tone: "error",
-        text: saved ? `Key 已保存，但验证未通过：${message}` : `验证未通过：${message}`,
+        text: saved
+          ? `Key 已保存，但验证未通过：${message}`
+          : `验证未通过：${message}`,
       });
     } finally {
       setTesting(false);
@@ -103,18 +129,32 @@ export function SettingsDialog({
       inputRef.current?.focus();
       return;
     }
+    if (apiKey.length > 512 || !/^[\x21-\x7e]+$/.test(apiKey)) {
+      setError("Key 只能包含可见字符，且不能超过 512 位。");
+      inputRef.current?.focus();
+      return;
+    }
 
     setSaving(true);
     setError(null);
     setVerify(null);
     setConfirmClear(false);
     try {
-      await saveMimoKey(apiKey);
-      setDraft("");
-      setReveal(false);
-      await onChanged();
-      onToast("个人 API Key 已保存");
-      await runTest(true);
+      if (browserMode) {
+        saveBrowserKey(apiKey);
+        setDraft("");
+        setReveal(false);
+        await onChanged();
+        onToast("个人 Key 已保存到此浏览器");
+        await runTest(true);
+      } else {
+        await saveMimoKey(apiKey);
+        setDraft("");
+        setReveal(false);
+        await onChanged();
+        onToast("个人 API Key 已保存");
+        await runTest(true);
+      }
     } catch (saveError) {
       setError(errorMessage(saveError));
     } finally {
@@ -127,14 +167,25 @@ export function SettingsDialog({
     setError(null);
     setVerify(null);
     try {
-      await clearMimoKey();
-      setConfirmClear(false);
-      await onChanged();
-      onToast(
-        config.envConfigured
-          ? "个人 Key 已清除，已回退到服务端 .env"
-          : "个人 Key 已清除",
-      );
+      if (browserMode) {
+        clearBrowserKey();
+        setConfirmClear(false);
+        await onChanged();
+        onToast(
+          config.serverKeyConfigured
+            ? "个人 Key 已清除，改用站点默认 Key"
+            : "个人 Key 已清除",
+        );
+      } else {
+        await clearMimoKey();
+        setConfirmClear(false);
+        await onChanged();
+        onToast(
+          config.envConfigured
+            ? "个人 Key 已清除，已回退到服务端 .env"
+            : "个人 Key 已清除",
+        );
+      }
     } catch (clearError) {
       setError(errorMessage(clearError));
     } finally {
@@ -168,11 +219,12 @@ export function SettingsDialog({
           </button>
         </div>
         <h2 className="dialog-title" id="settingsTitle">
-          连接你自己的 MiMo。
+          {browserMode ? "连接 MiMo。" : "连接你自己的 MiMo。"}
         </h2>
         <p className="dialog-text">
-          填入 MiMo 开放平台创建的 API Key，保存后立即生效，无需重启。Key
-          只保存在这台服务器上，不会回传给浏览器。
+          {browserMode
+            ? "填入你自己的 Key 直连 MiMo；不填则使用站点默认 Key。个人 Key 只保存在此浏览器。"
+            : "填入 MiMo 开放平台创建的 API Key，保存后立即生效，无需重启。Key 只保存在这台服务器上，不会回传给浏览器。"}
         </p>
 
         <div className="settings-status">
@@ -204,78 +256,97 @@ export function SettingsDialog({
           </p>
         ) : null}
 
-        <form
-          className="settings-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void handleSave();
-          }}
-        >
-          <label className="field-label" htmlFor="mimoKeyInput">
-            <span>新的 API Key</span>
-            <span className="field-hint">
-              {config.keySource === "settings" ? "输入新 Key 可替换" : "sk-… 或 tp-…"}
-            </span>
-          </label>
-          <div className="secret-field">
-            <input
-              ref={inputRef}
-              id="mimoKeyInput"
-              className="text-input secret-input"
-              type={reveal ? "text" : "password"}
-              value={draft}
-              onChange={(event) => {
-                setDraft(event.target.value);
-                setError(null);
-                setVerify(null);
-              }}
-              placeholder="粘贴 API Key，保存后不回显"
-              autoComplete="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              disabled={busy}
-              aria-invalid={Boolean(error)}
-              aria-describedby="mimoKeyHelp"
-            />
-            <button
-              className="secret-toggle"
-              type="button"
-              onClick={() => setReveal((current) => !current)}
-              aria-label={reveal ? "隐藏 API Key" : "显示 API Key"}
-              aria-pressed={reveal}
-              disabled={busy}
-            >
-              {reveal ? (
-                <EyeOff size={18} aria-hidden="true" />
-              ) : (
-                <Eye size={18} aria-hidden="true" />
-              )}
-            </button>
-          </div>
+        {config.keyEditable ? (
+          <form
+            className="settings-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleSave();
+            }}
+          >
+            <label className="field-label" htmlFor="mimoKeyInput">
+              <span>新的 API Key</span>
+              <span className="field-hint">
+                {browserMode
+                  ? browserKeyActive
+                    ? "输入新 Key 可替换"
+                    : config.serverKeyConfigured
+                      ? "留空则继续使用站点默认 Key"
+                      : "sk-… 或 tp-…"
+                  : config.keySource === "settings"
+                    ? "输入新 Key 可替换"
+                    : "sk-… 或 tp-…"}
+              </span>
+            </label>
+            <div className="secret-field">
+              <input
+                ref={inputRef}
+                id="mimoKeyInput"
+                className="text-input secret-input"
+                type={reveal ? "text" : "password"}
+                value={draft}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+                  setError(null);
+                  setVerify(null);
+                }}
+                placeholder="粘贴 API Key，保存后不回显"
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                disabled={busy}
+                aria-invalid={Boolean(error)}
+                aria-describedby="mimoKeyHelp"
+              />
+              <button
+                className="secret-toggle"
+                type="button"
+                onClick={() => setReveal((current) => !current)}
+                aria-label={reveal ? "隐藏 API Key" : "显示 API Key"}
+                aria-pressed={reveal}
+                disabled={busy}
+              >
+                {reveal ? (
+                  <EyeOff size={18} aria-hidden="true" />
+                ) : (
+                  <Eye size={18} aria-hidden="true" />
+                )}
+              </button>
+            </div>
 
-          <div className="settings-form-foot">
-            <p className="settings-privacy" id="mimoKeyHelp">
-              Key 写入服务端 <code>data/settings.json</code>
-              ，不会写入日志；个人 Key 优先于 <code>.env</code>。
-            </p>
-            <button
-              className="primary-btn"
-              type="submit"
-              disabled={busy || testing || draft.trim().length < 8}
-            >
-              {saving ? (
-                <>
-                  <span className="spinner" aria-hidden="true" />
-                  保存并验证中…
-                </>
-              ) : (
-                <>
-                  保存并验证 <span className="btn-arrow">→</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+            <div className="settings-form-foot">
+              <p className="settings-privacy" id="mimoKeyHelp">
+                {browserMode ? (
+                  <>
+                    个人 Key 只写入这台浏览器的 <code>localStorage</code>
+                    ，用于直连 MiMo，不经过站点服务器。
+                  </>
+                ) : (
+                  <>
+                    Key 写入服务端 <code>data/settings.json</code>
+                    ，不会写入日志；个人 Key 优先于 <code>.env</code>。
+                  </>
+                )}
+              </p>
+              <button
+                className="primary-btn"
+                type="submit"
+                disabled={busy || testing || draft.trim().length < 8}
+              >
+                {saving ? (
+                  <>
+                    <span className="spinner" aria-hidden="true" />
+                    保存并验证中…
+                  </>
+                ) : (
+                  <>
+                    保存并验证 <span className="btn-arrow">→</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        ) : null}
 
         {error ? (
           <p className="inline-error settings-error" role="alert">
@@ -294,21 +365,84 @@ export function SettingsDialog({
         ) : null}
 
         <div className="settings-extra">
-          还没有 Key？在{" "}
-          <a
-            href="https://platform.xiaomimimo.com/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            MiMo 开放平台
-          </a>{" "}
-          创建个人 API Key。
+          {browserMode ? (
+            <>
+              还没有个人 Key？可以留空使用站点默认 Key（如有），或到{" "}
+              <a
+                href="https://platform.xiaomimimo.com/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                MiMo 开放平台
+              </a>{" "}
+              创建。
+            </>
+          ) : (
+            <>
+              还没有 Key？在{" "}
+              <a
+                href="https://platform.xiaomimimo.com/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                MiMo 开放平台
+              </a>{" "}
+              创建个人 API Key。
+            </>
+          )}
         </div>
 
         <div className="settings-foot">
-          {config.keySource === "settings" ? (
+          {browserMode ? (
+            browserKeyActive ? (
+              confirmClear ? (
+                <div
+                  className="settings-clear-confirm"
+                  role="group"
+                  aria-label="确认清除个人 Key"
+                >
+                  <span>清除后改用站点默认 Key（如有）。</span>
+                  <button
+                    className="link-btn"
+                    type="button"
+                    disabled={clearing}
+                    onClick={() => setConfirmClear(false)}
+                  >
+                    取消
+                  </button>
+                  <button
+                    className="link-btn is-danger"
+                    type="button"
+                    disabled={clearing}
+                    onClick={() => void handleClear()}
+                  >
+                    {clearing ? "清除中…" : "确认清除"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="link-btn is-danger"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setConfirmClear(true)}
+                >
+                  清除个人 Key
+                </button>
+              )
+            ) : (
+              <span className="settings-foot-note">
+                {config.serverKeyConfigured
+                  ? "当前使用站点默认 Key；填入个人 Key 后优先使用。"
+                  : "保存后立即启用真实接口。"}
+              </span>
+            )
+          ) : config.keySource === "settings" ? (
             confirmClear ? (
-              <div className="settings-clear-confirm" role="group" aria-label="确认清除个人 Key">
+              <div
+                className="settings-clear-confirm"
+                role="group"
+                aria-label="确认清除个人 Key"
+              >
                 <span>清除后改用服务端 .env 中的 Key（如有）。</span>
                 <button
                   className="link-btn"
