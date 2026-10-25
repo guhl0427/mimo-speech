@@ -1218,9 +1218,14 @@
     max-height: 40px;
     border-radius: 1px;
     background: var(--line-strong);
-    transition: background .12s;
+    transform-origin: center;
+    transition: height .32s ease, background .12s, transform .28s ease;
   }
   .wave span.is-played { background: var(--accent); }
+  .wave.is-live span {
+    transition: background .12s;
+    will-change: transform;
+  }
   .player-time {
     flex: none;
     font-family: var(--mono);
