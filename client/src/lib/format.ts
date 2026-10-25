@@ -38,7 +38,7 @@ export function extensionFromMime(mime: string): string {
 }
 
 export function buildDownloadName(voiceId: string, mime: string): string {
-  const safeVoice = voiceId.replace(/[^a-zA-Z0-9_-]/g, "") || "mimo";
+  const safeVoice = voiceId.replace(/[^\p{L}\p{N}_-]/gu, "") || "mimo";
   const now = new Date();
   const pad = (value: number) => String(value).padStart(2, "0");
   const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(

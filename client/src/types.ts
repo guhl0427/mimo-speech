@@ -97,13 +97,15 @@ export const DEFAULT_LIMITS: Limits = {
 };
 
 export const DEFAULT_VOICES: Voice[] = [
-  { id: "mimo_default", label: "默认中文 · MiMo", language: "zh" },
-  { id: "default_zh", label: "Default ZH · 中文", language: "zh" },
-  { id: "Mia", label: "Mia · 中文", language: "zh" },
-  { id: "Chloe", label: "Chloe · 中文", language: "zh" },
-  { id: "Milo", label: "Milo · 中文", language: "zh" },
-  { id: "Dean", label: "Dean · 中文", language: "zh" },
-  { id: "default_en", label: "Default EN · English", language: "en" },
+  { id: "mimo_default", label: "MiMo 默认 · 随集群", language: "auto" },
+  { id: "冰糖", label: "冰糖 · 中文女声", language: "zh" },
+  { id: "茉莉", label: "茉莉 · 中文女声", language: "zh" },
+  { id: "苏打", label: "苏打 · 中文男声", language: "zh" },
+  { id: "白桦", label: "白桦 · 中文男声", language: "zh" },
+  { id: "Mia", label: "Mia · 英文女声", language: "en" },
+  { id: "Chloe", label: "Chloe · 英文女声", language: "en" },
+  { id: "Milo", label: "Milo · 英文男声", language: "en" },
+  { id: "Dean", label: "Dean · 英文男声", language: "en" },
 ];
 
 export const FALLBACK_CONFIG: AppConfig = {

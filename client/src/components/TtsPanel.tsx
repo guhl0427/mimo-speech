@@ -8,6 +8,8 @@ import {
   titleFromText,
 } from "../lib/format";
 import { AudioPlayer } from "./AudioPlayer";
+import { StyleField } from "./StyleField";
+import { VoiceSelect } from "./VoiceSelect";
 
 type Props = {
   config: AppConfig;
@@ -234,36 +236,25 @@ export function TtsPanel({
 
         <div className="controls">
           <div className="control">
-            <label className="control-label" htmlFor="voiceSelect">
+            <span className="control-label" id="voiceLabel">
               Voice / 音色
-            </label>
-            <div className="select-wrap">
-              <select
-                id="voiceSelect"
-                value={voiceId}
-                onChange={(event) => setVoiceId(event.target.value)}
-              >
-                {config.voices.map((voice) => (
-                  <option key={voice.id} value={voice.id}>
-                    {voice.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            </span>
+            <VoiceSelect
+              voices={config.voices}
+              value={voiceId}
+              onChange={(id) => setVoiceId(id)}
+              labelledBy="voiceLabel"
+            />
           </div>
           <div className="control">
             <label className="control-label" htmlFor="styleInput">
               Style / 语气
             </label>
-            <input
-              className="text-input"
-              id="styleInput"
-              type="text"
-              maxLength={config.limits.styleMax}
+            <StyleField
               value={style}
-              onChange={(event) => setStyle(event.target.value)}
-              placeholder="温柔、稍慢，像深夜电台"
-              autoComplete="off"
+              onChange={(next) => setStyle(next)}
+              maxLength={config.limits.styleMax}
+              inputId="styleInput"
             />
           </div>
           <div className="control">

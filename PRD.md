@@ -209,7 +209,7 @@
 - 文本放在 assistant 消息，语气/语速放 user 消息
 - 输出：MP3（Base64 在响应 JSON 中；具体字段 M0 确认）
 - 计费：当前限时免费
-- 预设音色（M0 核对）：`mimo_default`、`default_zh`、`default_en`、`Mia`、`Chloe`、`Milo`、`Dean`
+- 预设音色（官方 9 个，M0 复核可用性）：`mimo_default`、`冰糖`、`茉莉`、`苏打`、`白桦`、`Mia`、`Chloe`、`Milo`、`Dean`
 - 参考请求：
 
 ```json
@@ -438,8 +438,8 @@ re-tts/
 {
   "tts": {
     "voices": [
-      { "id": "mimo_default", "label": "默认", "language": "zh" },
-      { "id": "default_zh", "label": "中文", "language": "zh" }
+      { "id": "mimo_default", "label": "MiMo 默认 · 随集群", "language": "auto" },
+      { "id": "冰糖", "label": "冰糖 · 中文女声", "language": "zh" }
     ],
     "free": "limited"
   },
