@@ -12,6 +12,7 @@ import {
 import { buildDownloadName, readAudioDuration, titleFromText } from "./lib/format";
 import { TopBar } from "./components/TopBar";
 import { Intro } from "./components/Intro";
+import { ModeSwitch } from "./components/ModeSwitch";
 import { ConfigBanner } from "./components/ConfigBanner";
 import { TtsPanel } from "./components/TtsPanel";
 import { SttPanel } from "./components/SttPanel";
@@ -236,9 +237,11 @@ export function App() {
       />
 
       <main className="shell">
-        <Intro config={config} mode={mode} onModeChange={changeMode} />
+        <Intro config={config} />
 
-        <section className="workspace">
+        <section className="workspace" aria-label="语音工作台">
+          <ModeSwitch config={config} mode={mode} onChange={changeMode} />
+
           <ConfigBanner
             config={config}
             loading={configLoading}
