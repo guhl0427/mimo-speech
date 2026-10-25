@@ -1,4 +1,10 @@
-import type { AppConfig, SttApiResult, TtsApiResult } from "../types";
+import type {
+  AppConfig,
+  SettingsApiResult,
+  SttApiResult,
+  TtsApiResult,
+  VerifyApiResult,
+} from "../types";
 
 export class ApiError extends Error {
   readonly code: string;
@@ -131,6 +137,44 @@ export async function transcribeAudio(input: TranscribeInput): Promise<SttApiRes
 
     if (!response.ok) await throwApiError(response);
     return (await response.json()) as SttApiResult;
+  } catch (error) {
+    return networkError(error);
+  }
+}
+
+export async function saveMimoKey(apiKey: string): Promise<SettingsApiResult> {
+  try {
+    const response = await fetch("/api/settings/mimo-key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey }),
+    });
+    if (!response.ok) await throwApiError(response);
+    return (await response.json()) as SettingsApiResult;
+  } catch (error) {
+    return networkError(error);
+  }
+}
+
+export async function clearMimoKey(): Promise<SettingsApiResult> {
+  try {
+    const response = await fetch("/api/settings/mimo-key", {
+      method: "DELETE",
+    });
+    if (!response.ok) await throwApiError(response);
+    return (await response.json()) as SettingsApiResult;
+  } catch (error) {
+    return networkError(error);
+  }
+}
+
+export async function testMimoKey(): Promise<VerifyApiResult> {
+  try {
+    const response = await fetch("/api/settings/mimo-key/test", {
+      method: "POST",
+    });
+    if (!response.ok) await throwApiError(response);
+    return (await response.json()) as VerifyApiResult;
   } catch (error) {
     return networkError(error);
   }

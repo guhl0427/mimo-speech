@@ -1,8 +1,6 @@
 import { randomUUID } from "node:crypto";
 import {
-  APP_MODE,
   ASR_TIMEOUT_MS,
-  MIMO_API_KEY,
   MIMO_BASE_URL,
   MODEL_ASR,
   MODEL_TTS,
@@ -10,6 +8,7 @@ import {
 } from "./config.js";
 import { createMockWav, sniffAudioMime } from "./audio.js";
 import { AppError } from "./errors.js";
+import { getAppMode, getEffectiveApiKey } from "./settings.js";
 
 type TtsInput = {
   text: string;
@@ -43,13 +42,13 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function authHeaders(): Record<string, string> {
+function authHeaders(apiKey: string): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "api-key": MIMO_API_KEY,
+    "api-key": apiKey,
   };
   // MiMo documentation shows both api-key and OpenAI-compatible Bearer auth.
-  if (MIMO_API_KEY) headers.Authorization = `Bearer ${MIMO_API_KEY}`;
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
   return headers;
 }
 
@@ -58,7 +57,7 @@ function upstreamError(status: number, retryAfterHeader: string | null): AppErro
   if (status === 401 || status === 403) {
     return new AppError(
       "PROVIDER_AUTH_ERROR",
-      "MiMo API Key 无效或没有权限，请检查服务端配置。",
+      "MiMo API Key 无效或没有权限，请到设置中检查。",
       502,
     );
   }
@@ -91,10 +90,11 @@ type ChatResponse = {
 };
 
 async function postChat(body: unknown, timeoutMs: number): Promise<ChatResponse> {
-  if (APP_MODE === "unconfigured") {
+  const apiKey = getEffectiveApiKey();
+  if (!apiKey) {
     throw new AppError(
       "MIMO_NOT_CONFIGURED",
-      "服务端尚未配置 MIMO_API_KEY。请在 .env 中填入 Key 并重启服务。",
+      "尚未配置 MiMo API Key。请打开设置填写，或在 .env 中配置 MIMO_API_KEY。",
       503,
     );
   }
@@ -103,7 +103,7 @@ async function postChat(body: unknown, timeoutMs: number): Promise<ChatResponse>
   try {
     response = await fetch(`${MIMO_BASE_URL}/chat/completions`, {
       method: "POST",
-      headers: authHeaders(),
+      headers: authHeaders(apiKey),
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -212,7 +212,7 @@ function findAudioBase64(value: unknown, depth = 0): string | null {
 }
 
 export async function synthesizeSpeech(input: TtsInput): Promise<TtsResult> {
-  if (APP_MODE === "mock") {
+  if (getAppMode() === "mock") {
     await delay(650);
     return {
       buffer: createMockWav(),
@@ -321,7 +321,7 @@ function extractText(json: unknown): string {
 }
 
 export async function transcribeSpeech(input: AsrInput): Promise<AsrResult> {
-  if (APP_MODE === "mock") {
+  if (getAppMode() === "mock") {
     await delay(750);
     return {
       text:
@@ -365,4 +365,47 @@ export async function transcribeSpeech(input: AsrInput): Promise<AsrResult> {
   }
 
   return { text, requestId, provider: "mimo", mock: false };
+}
+
+export async function verifyMimoKey(apiKey: string): Promise<{ latencyMs: number }> {
+  const startedAt = Date.now();
+
+  let response: Response;
+  try {
+    response = await fetch(`${MIMO_BASE_URL}/models`, {
+      headers: authHeaders(apiKey),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const isTimeout =
+      error instanceof DOMException && error.name === "TimeoutError";
+    throw new AppError(
+      isTimeout ? "PROVIDER_TIMEOUT" : "PROVIDER_UNAVAILABLE",
+      isTimeout
+        ? "验证超时，请检查网络后重试。"
+        : "无法连接 MiMo，请检查网络后重试。",
+      isTimeout ? 504 : 502,
+      { cause: error },
+    );
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    throw new AppError(
+      "PROVIDER_AUTH_ERROR",
+      "这个 Key 无效，或没有访问 MiMo API 的权限。请检查后重新填写。",
+      400,
+    );
+  }
+
+  if (!response.ok) {
+    throw upstreamError(response.status, response.headers.get("retry-after"));
+  }
+
+  try {
+    await response.body?.cancel();
+  } catch {
+    // The verification result is already known.
+  }
+
+  return { latencyMs: Date.now() - startedAt };
 }

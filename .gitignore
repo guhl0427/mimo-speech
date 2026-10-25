@@ -3,3 +3,5 @@ client/dist/
 server/dist/
 .env
 *.log
+
+data/

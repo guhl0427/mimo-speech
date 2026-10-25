@@ -96,6 +96,7 @@ type InfoDialogProps = {
   configError: string | null;
   onClose: () => void;
   onRetry: () => void;
+  onSettings: () => void;
 };
 
 export function InfoDialog({
@@ -104,6 +105,7 @@ export function InfoDialog({
   configError,
   onClose,
   onRetry,
+  onSettings,
 }: InfoDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -136,6 +138,10 @@ export function InfoDialog({
           服务端不保存这些内容，历史记录只存在这台浏览器里。
         </p>
         <p className="dialog-text" style={{ marginTop: 12 }}>
+          设置中保存的 Key 仅写入服务端 <code>data/settings.json</code>
+          ，不会回显到浏览器或写入日志。
+        </p>
+        <p className="dialog-text" style={{ marginTop: 12 }}>
           第一版尚未提供 SRT / 实时识别；转写结果需要人工核对。请勿上传敏感或机密音频。
         </p>
 
@@ -154,15 +160,15 @@ export function InfoDialog({
 
         {config.mode === "unconfigured" ? (
           <p className="dialog-text">
-            在项目根目录的 <code>.env</code> 中填入{" "}
-            <code>MIMO_API_KEY=你的 Key</code>，保存后重启 API 服务。页面刷新即可显示{" "}
-            <code>MIMO READY</code>。
+            打开右上角「设置」填入你自己的 MiMo API Key，保存后立即生效；也可以在项目根目录的{" "}
+            <code>.env</code> 中配置 <code>MIMO_API_KEY</code> 后重启服务。设置中的个人
+            Key 优先生效。
           </p>
         ) : null}
         {config.mode === "mock" ? (
           <p className="dialog-text">
-            当前由 <code>MOCK_MIMO=1</code> 提供本地示例。真实使用前请将其设为{" "}
-            <code>0</code> 并填入 Key。
+            当前由 <code>MOCK_MIMO=1</code> 提供本地示例。可在设置中先保存 Key；关闭
+            Mock 并重启后才会调用真实接口。
           </p>
         ) : null}
         {configError ? (
@@ -177,6 +183,9 @@ export function InfoDialog({
               重试连接
             </button>
           ) : null}
+          <button className="secondary-btn" type="button" onClick={onSettings}>
+            打开设置
+          </button>
           <button className="secondary-btn" type="button" onClick={onClose}>
             知道了
           </button>

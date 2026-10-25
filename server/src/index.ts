@@ -6,7 +6,6 @@ import multer from "multer";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import {
-  APP_MODE,
   CLIENT_DIST,
   LIMITS,
   MODEL_ASR,
@@ -18,7 +17,14 @@ import {
 } from "./config.js";
 import { prepareAudio } from "./audio.js";
 import { AppError, asyncRoute, errorHandler, notFoundHandler } from "./errors.js";
-import { synthesizeSpeech, transcribeSpeech } from "./mimo.js";
+import { synthesizeSpeech, transcribeSpeech, verifyMimoKey } from "./mimo.js";
+import {
+  clearStoredApiKey,
+  getAppMode,
+  getEffectiveApiKey,
+  getKeyStatus,
+  saveStoredApiKey,
+} from "./settings.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -59,6 +65,16 @@ const sttLimiter = rateLimit({
   },
 });
 
+const settingsLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, _res, next) => {
+    next(new AppError("RATE_LIMITED", "操作太频繁，请稍后再试。", 429));
+  },
+});
+
 const ttsSchema = z.object({
   text: z
     .string()
@@ -82,20 +98,44 @@ const ttsSchema = z.object({
     .default(1),
 });
 
+const mimoKeySchema = z.object({
+  apiKey: z
+    .string()
+    .trim()
+    .min(8, "API Key 太短，请检查是否复制完整。")
+    .max(512, "API Key 过长，请检查是否复制了多余内容。")
+    .regex(/^[\x21-\x7e]+$/, "API Key 不能包含空格或换行。"),
+});
+
+function settingsPayload() {
+  const status = getKeyStatus();
+  return {
+    ok: true,
+    mode: getAppMode(),
+    keySource: status.source,
+    keyHint: status.hint,
+    envConfigured: status.envConfigured,
+  };
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
-    mode: APP_MODE,
-    mimoConfigured: APP_MODE === "live",
+    mode: getAppMode(),
+    mimoConfigured: getAppMode() === "live",
   });
 });
 
 app.get("/api/config", (_req, res) => {
+  const status = getKeyStatus();
   res.setHeader("Cache-Control", "no-store");
   res.json({
-    mode: APP_MODE,
-    mimoConfigured: APP_MODE === "live",
-    mock: APP_MODE === "mock",
+    mode: getAppMode(),
+    mimoConfigured: getAppMode() === "live",
+    mock: getAppMode() === "mock",
+    keySource: status.source,
+    keyHint: status.hint,
+    envConfigured: status.envConfigured,
     voices: VOICES,
     limits: LIMITS,
     tts: { model: MODEL_TTS, free: "limited" },
@@ -107,13 +147,63 @@ app.get("/api/config", (_req, res) => {
 });
 
 app.post(
+  "/api/settings/mimo-key",
+  settingsLimiter,
+  asyncRoute(async (req, res) => {
+    const parsed = mimoKeySchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        parsed.error.issues[0]?.message ?? "API Key 格式不正确。",
+        400,
+      );
+    }
+
+    saveStoredApiKey(parsed.data.apiKey);
+    console.log("[shengxi] MiMo API Key updated from settings.");
+    res.setHeader("Cache-Control", "no-store");
+    res.json(settingsPayload());
+  }),
+);
+
+app.delete(
+  "/api/settings/mimo-key",
+  settingsLimiter,
+  asyncRoute(async (_req, res) => {
+    clearStoredApiKey();
+    console.log("[shengxi] Stored MiMo API Key cleared from settings.");
+    res.setHeader("Cache-Control", "no-store");
+    res.json(settingsPayload());
+  }),
+);
+
+app.post(
+  "/api/settings/mimo-key/test",
+  settingsLimiter,
+  asyncRoute(async (_req, res) => {
+    const apiKey = getEffectiveApiKey();
+    if (!apiKey) {
+      throw new AppError(
+        "MIMO_NOT_CONFIGURED",
+        "还没有可测试的 Key，请先填写并保存。",
+        400,
+      );
+    }
+
+    const result = await verifyMimoKey(apiKey);
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, latencyMs: result.latencyMs });
+  }),
+);
+
+app.post(
   "/api/tts",
   ttsLimiter,
   asyncRoute(async (req, res) => {
-    if (APP_MODE === "unconfigured") {
+    if (getAppMode() === "unconfigured") {
       throw new AppError(
         "MIMO_NOT_CONFIGURED",
-        "服务端尚未配置 MIMO_API_KEY。请在 .env 中填入 Key 并重启服务。",
+        "尚未配置 MiMo API Key。请打开设置填写，或在 .env 中配置 MIMO_API_KEY。",
         503,
       );
     }
@@ -153,10 +243,10 @@ app.post(
   sttLimiter,
   upload.single("file"),
   asyncRoute(async (req, res) => {
-    if (APP_MODE === "unconfigured") {
+    if (getAppMode() === "unconfigured") {
       throw new AppError(
         "MIMO_NOT_CONFIGURED",
-        "服务端尚未配置 MIMO_API_KEY。请在 .env 中填入 Key 并重启服务。",
+        "尚未配置 MiMo API Key。请打开设置填写，或在 .env 中配置 MIMO_API_KEY。",
         503,
       );
     }
@@ -215,7 +305,7 @@ if (existsSync(CLIENT_DIST)) {
   app.get("/", (_req, res) => {
     res.json({
       name: "shengxi-api",
-      mode: APP_MODE,
+      mode: getAppMode(),
       message: "Development UI runs on http://127.0.0.1:5173.",
     });
   });
@@ -233,18 +323,19 @@ app.use((_req, res) => {
 
 app.use(errorHandler);
 
-if (APP_MODE === "mock") {
+const startupMode = getAppMode();
+if (startupMode === "mock") {
   console.warn(
     "[shengxi] MOCK_MIMO=1: TTS/STT requests use local sample data. No MiMo calls will be made.",
   );
-} else if (APP_MODE === "unconfigured") {
+} else if (startupMode === "unconfigured") {
   console.warn(
-    "[shengxi] MIMO_API_KEY is not set. Add it to .env and restart to enable TTS/STT.",
+    "[shengxi] No MiMo API Key found. Add one in the in-app settings or set MIMO_API_KEY in .env.",
   );
 }
 
 app.listen(PORT, "127.0.0.1", () => {
   console.log(
-    `[shengxi] API listening on http://127.0.0.1:${PORT} (${APP_MODE})`,
+    `[shengxi] API listening on http://127.0.0.1:${PORT} (${getAppMode()})`,
   );
 });

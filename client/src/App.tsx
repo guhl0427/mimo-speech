@@ -19,6 +19,7 @@ import { SttPanel } from "./components/SttPanel";
 import { RecentPanel } from "./components/RecentPanel";
 import { Footer } from "./components/Footer";
 import { InfoDialog } from "./components/Dialogs";
+import { SettingsDialog } from "./components/SettingsDialog";
 import { Toast } from "./components/Toast";
 
 function initialMode(): Mode {
@@ -36,6 +37,7 @@ export function App() {
   const [player, setPlayer] = useState<PlayerState | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const toastTimer = useRef<number | null>(null);
   const playerUrlRef = useRef<string | null>(null);
@@ -103,6 +105,11 @@ export function App() {
     setMode(next);
     window.history.replaceState(null, "", `#${next}`);
   }, []);
+
+  const openSettings = useCallback(() => {
+    setSettingsOpen(true);
+    void loadConfig();
+  }, [loadConfig]);
 
   const handleTtsCreated = useCallback(
     (nextPlayer: PlayerState, item: HistoryItem, blob: Blob) => {
@@ -212,13 +219,18 @@ export function App() {
     }
     if (configLoading) return { text: "正在连接 MiMo 服务…", warning: false };
     if (config.mode === "live") {
-      return { text: "MiMo API 已连接 · 音频不落盘", warning: false };
+      return {
+        text: `MiMo API 已连接 · ${
+          config.keySource === "settings" ? "个人 Key" : "服务端 Key"
+        } · 音频不落盘`,
+        warning: false,
+      };
     }
     if (config.mode === "mock") {
       return { text: "开发 Mock 模式 · 结果均为本地示例", warning: true };
     }
     return {
-      text: "服务端未配置 MIMO_API_KEY · 填入 .env 后重启",
+      text: "尚未配置 MiMo API Key · 打开右上角设置填写",
       warning: true,
     };
   })();
@@ -233,6 +245,7 @@ export function App() {
         config={config}
         loading={configLoading}
         error={configError}
+        onSettings={openSettings}
         onInfo={() => setInfoOpen(true)}
       />
 
@@ -247,7 +260,7 @@ export function App() {
             loading={configLoading}
             error={configError}
             onRetry={() => void loadConfig()}
-            onInfo={() => setInfoOpen(true)}
+            onSettings={openSettings}
           />
 
           <TtsPanel
@@ -285,6 +298,20 @@ export function App() {
         configError={configError}
         onClose={() => setInfoOpen(false)}
         onRetry={() => void loadConfig()}
+        onSettings={() => {
+          setInfoOpen(false);
+          openSettings();
+        }}
+      />
+
+      <SettingsDialog
+        open={settingsOpen}
+        config={config}
+        onClose={() => setSettingsOpen(false)}
+        onChanged={async () => {
+          await loadConfig();
+        }}
+        onToast={showToast}
       />
 
       <Toast message={toast} />

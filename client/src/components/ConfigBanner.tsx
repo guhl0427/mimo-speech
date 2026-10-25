@@ -5,10 +5,16 @@ type Props = {
   loading: boolean;
   error: string | null;
   onRetry: () => void;
-  onInfo: () => void;
+  onSettings: () => void;
 };
 
-export function ConfigBanner({ config, loading, error, onRetry, onInfo }: Props) {
+export function ConfigBanner({
+  config,
+  loading,
+  error,
+  onRetry,
+  onSettings,
+}: Props) {
   if (error) {
     return (
       <div className="config-banner is-error" role="status">
@@ -36,7 +42,8 @@ export function ConfigBanner({ config, loading, error, onRetry, onInfo }: Props)
           <p>
             <strong>当前是开发 Mock 模式。</strong>
             音频和转写均为本地示例，不会调用 MiMo。将{" "}
-            <code>MOCK_MIMO</code> 设为 <code>0</code> 并填入 Key 后重启即可使用真实接口。
+            <code>MOCK_MIMO</code> 设为 <code>0</code> 并重启后，即可使用设置中的
+            Key。
           </p>
         </div>
       </div>
@@ -49,13 +56,17 @@ export function ConfigBanner({ config, loading, error, onRetry, onInfo }: Props)
         <span className="config-banner-kicker">SETUP</span>
         <div className="banner-body">
           <p>
-            <strong>服务端尚未配置 MIMO_API_KEY。</strong>在项目根目录创建{" "}
-            <code>.env</code>，填入 <code>MIMO_API_KEY</code> 并重启服务即可启用
-            TTS / ASR。
+            <strong>还没有配置 MiMo API Key。</strong>
+            打开设置填入你自己的 Key，保存后立即启用 TTS / ASR；也可以继续在服务端{" "}
+            <code>.env</code> 中配置。
           </p>
         </div>
-        <button className="text-link banner-action" type="button" onClick={onInfo}>
-          查看说明
+        <button
+          className="text-link banner-action"
+          type="button"
+          onClick={onSettings}
+        >
+          打开设置
         </button>
       </div>
     );

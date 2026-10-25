@@ -2,6 +2,8 @@ export type Mode = "stt" | "tts";
 
 export type AppMode = "live" | "mock" | "unconfigured";
 
+export type KeySource = "settings" | "env" | "none";
+
 export type Voice = {
   id: string;
   label: string;
@@ -23,10 +25,26 @@ export type AppConfig = {
   mode: AppMode;
   mimoConfigured: boolean;
   mock: boolean;
+  keySource: KeySource;
+  keyHint: string | null;
+  envConfigured: boolean;
   voices: Voice[];
   limits: Limits;
   tts: { model: string; free: string };
   stt: { model: string; pricePerHourCny: number };
+};
+
+export type SettingsApiResult = {
+  ok: true;
+  mode: AppMode;
+  keySource: KeySource;
+  keyHint: string | null;
+  envConfigured: boolean;
+};
+
+export type VerifyApiResult = {
+  ok: true;
+  latencyMs: number;
 };
 
 export type HistoryItem = {
@@ -112,6 +130,9 @@ export const FALLBACK_CONFIG: AppConfig = {
   mode: "unconfigured",
   mimoConfigured: false,
   mock: false,
+  keySource: "none",
+  keyHint: null,
+  envConfigured: false,
   voices: DEFAULT_VOICES,
   limits: DEFAULT_LIMITS,
   tts: { model: "mimo-v2.5-tts", free: "limited" },

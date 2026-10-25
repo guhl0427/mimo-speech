@@ -1,9 +1,11 @@
+import { Settings } from "lucide-react";
 import type { AppConfig } from "../types";
 
 type Props = {
   config: AppConfig;
   loading: boolean;
   error: string | null;
+  onSettings: () => void;
   onInfo: () => void;
 };
 
@@ -15,7 +17,21 @@ function statusFor(config: AppConfig, loading: boolean, error: string | null) {
   return { label: "未配置 KEY", className: "is-warn" };
 }
 
-export function TopBar({ config, loading, error, onInfo }: Props) {
+function keyTitle(config: AppConfig): string {
+  if (config.keySource === "settings") {
+    return config.keyHint
+      ? `使用设置中的个人 Key（尾号 ${config.keyHint}）`
+      : "使用设置中的个人 Key";
+  }
+  if (config.keySource === "env") {
+    return config.keyHint
+      ? `使用服务端 .env 中的 Key（尾号 ${config.keyHint}）`
+      : "使用服务端 .env 中的 Key";
+  }
+  return "尚未配置 MiMo API Key，打开设置填写";
+}
+
+export function TopBar({ config, loading, error, onSettings, onInfo }: Props) {
   const status = statusFor(config, loading, error);
 
   return (
@@ -32,11 +48,20 @@ export function TopBar({ config, loading, error, onInfo }: Props) {
       <div className="top-actions">
         <span
           className={`demo-chip ${status.className}`}
-          title="MiMo 接口状态"
+          title={error ? "MiMo 接口状态" : keyTitle(config)}
         >
           <span className="dot" aria-hidden="true" />
           {status.label}
         </span>
+        <button
+          className="text-link settings-link"
+          type="button"
+          onClick={onSettings}
+          aria-label="打开 MiMo Key 设置"
+        >
+          <Settings size={14} aria-hidden="true" />
+          设置
+        </button>
         <button className="text-link" type="button" onClick={onInfo}>
           说明
         </button>

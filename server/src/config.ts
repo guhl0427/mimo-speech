@@ -8,18 +8,13 @@ export const ROOT_DIR = path.resolve(here, "../..");
 export const CLIENT_DIST = path.join(ROOT_DIR, "client", "dist");
 
 export const PORT = Number(process.env.PORT ?? 8787);
-export const MIMO_API_KEY = (process.env.MIMO_API_KEY ?? "").trim();
+export const ENV_MIMO_API_KEY = (process.env.MIMO_API_KEY ?? "").trim();
 export const MIMO_BASE_URL = (
   process.env.MIMO_BASE_URL ?? "https://api.xiaomimimo.com/v1"
 ).replace(/\/+$/, "");
 export const MOCK_MIMO = process.env.MOCK_MIMO === "1";
 
 export type AppMode = "mock" | "live" | "unconfigured";
-export const APP_MODE: AppMode = MOCK_MIMO
-  ? "mock"
-  : MIMO_API_KEY
-    ? "live"
-    : "unconfigured";
 
 export const MODEL_TTS = "mimo-v2.5-tts";
 export const MODEL_ASR = "mimo-v2.5-asr";
