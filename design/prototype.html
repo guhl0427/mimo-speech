@@ -1,0 +1,2526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<meta name="description" content="声息 — 只服务 MiMo 的私人语音工作台界面原型">
+<meta name="theme-color" content="#f2ede3">
+<title>声息 · MiMo 语音工作台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23b23a22'/%3E%3Cpath d='M20 20h24M20 32h24M20 44h14' stroke='%23fff8ef' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f2ede3;
+    --paper-deep: #eae4d8;
+    --surface: #fbf8f1;
+    --ink: #1a1711;
+    --muted: #5f574a;
+    --faint: #72695a;
+    --line: #d8cfbf;
+    --line-strong: #b9ae9c;
+    --accent: #b23a22;
+    --accent-dark: #8f2b17;
+    --accent-soft: #f0ddd4;
+    --ok: #3f6b4f;
+    --serif: "Iowan Old Style", "Palatino Linotype", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "SimSun", Georgia, serif;
+    --display: "Fraunces", "Iowan Old Style", "Palatino Linotype", "Songti SC", "SimSun", Georgia, serif;
+    --sans: "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --mono: "DM Mono", "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --radius: 4px;
+    --shadow-paper: 0 1px 0 rgba(255,255,255,.65) inset, 0 18px 44px rgba(58,45,28,.045);
+    --ease: cubic-bezier(.22, .8, .3, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-width: 320px;
+    overflow-x: hidden;
+    background:
+      radial-gradient(1100px 560px at 78% -12%, rgba(255,252,245,.95) 0%, rgba(255,252,245,0) 64%),
+      var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .055;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+
+  ::selection { background: var(--accent-soft); color: var(--accent-dark); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  svg { display: block; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .sr-only {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0);
+    white-space: nowrap; border: 0;
+  }
+
+  .side-note {
+    position: fixed;
+    left: 16px;
+    bottom: 42px;
+    z-index: 3;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .3em;
+    color: var(--faint);
+    opacity: .8;
+    pointer-events: none;
+  }
+
+  .topbar {
+    position: relative;
+    z-index: 4;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .seal {
+    width: 32px;
+    height: 32px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    color: #fff8ef;
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1;
+    border-radius: 2px;
+    transform: rotate(-3deg);
+    box-shadow: inset 0 0 0 2px rgba(255,248,239,.22);
+  }
+
+  .brand-copy { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+  .wordmark {
+    font-family: var(--serif);
+    font-size: 23px;
+    letter-spacing: .1em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .brand-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .16em;
+    color: var(--faint);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .top-actions { display: flex; align-items: center; gap: 18px; }
+  .demo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .demo-chip .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: breathe 3s ease-in-out infinite;
+  }
+  .text-link {
+    appearance: none;
+    border: 0;
+    background: none;
+    padding: 4px 0;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .06em;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color .2s, border-color .2s;
+  }
+  .text-link:hover { color: var(--accent); border-color: var(--accent); }
+
+  .shell {
+    position: relative;
+    z-index: 2;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(42px, 6vw, 84px) 40px 54px;
+    display: grid;
+    grid-template-columns: minmax(290px, .9fr) minmax(0, 1.62fr);
+    gap: clamp(48px, 7vw, 110px);
+    align-items: start;
+  }
+
+  .intro {
+    position: sticky;
+    top: 34px;
+    min-width: 0;
+    animation: rise .7s var(--ease) both;
+  }
+  .intro::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: -20px;
+    width: 1px;
+    height: 38px;
+    background: var(--accent);
+  }
+  .ghost {
+    position: absolute;
+    top: -92px;
+    right: -26px;
+    z-index: -1;
+    font-family: var(--serif);
+    font-size: clamp(200px, 23vw, 320px);
+    line-height: 1;
+    color: rgba(26,23,17,.034);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .eyebrow::before {
+    content: "";
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    margin: 24px 0 20px;
+    font-family: var(--display);
+    font-size: clamp(44px, 4.9vw, 72px);
+    font-weight: 400;
+    line-height: 1.07;
+    letter-spacing: -.045em;
+    text-wrap: balance;
+  }
+  h1 em {
+    position: relative;
+    font-style: normal;
+    color: var(--accent);
+  }
+  h1 em::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 2px;
+    bottom: .06em;
+    height: 1px;
+    background: currentColor;
+    opacity: .32;
+  }
+
+  .lede {
+    max-width: 35ch;
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.85;
+  }
+
+  .rate-strip {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .rate-cell { padding: 15px 0 14px; min-width: 0; }
+  .rate-cell + .rate-cell {
+    padding-left: 18px;
+    border-left: 1px solid var(--line);
+  }
+  .rate-key {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .rate-value {
+    margin-top: 5px;
+    font-family: var(--serif);
+    font-size: 17px;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .rate-value small {
+    display: block;
+    margin-top: 2px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .01em;
+  }
+
+  .modes {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--line);
+    animation: rise .7s .12s var(--ease) both;
+  }
+  .mode-tab {
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px minmax(0,1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 17px 0;
+    appearance: none;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    text-align: left;
+    color: var(--muted);
+    transition: color .2s var(--ease), padding-left .2s var(--ease);
+  }
+  .mode-tab::before {
+    content: "";
+    position: absolute;
+    left: -19px;
+    top: 50%;
+    width: 2px;
+    height: 28px;
+    background: var(--accent);
+    transform: translateY(-50%) scaleY(0);
+    transform-origin: center;
+    transition: transform .22s var(--ease);
+  }
+  .mode-tab:hover { color: var(--ink); padding-left: 5px; }
+  .mode-tab[aria-selected="true"] { color: var(--ink); }
+  .mode-tab[aria-selected="true"]::before { transform: translateY(-50%) scaleY(1); }
+  .mode-index {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--faint);
+  }
+  .mode-name {
+    font-family: var(--serif);
+    font-size: clamp(20px, 1.7vw, 24px);
+    line-height: 1.2;
+    letter-spacing: .01em;
+  }
+  .mode-name small {
+    display: block;
+    margin-top: 5px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .08em;
+    color: var(--faint);
+  }
+  .mode-arrow {
+    font-family: var(--mono);
+    font-size: 17px;
+    color: var(--faint);
+    transition: transform .2s var(--ease), color .2s;
+  }
+  .mode-tab:hover .mode-arrow { transform: translateX(4px); color: var(--accent); }
+  .mode-tab[aria-selected="true"] .mode-arrow { color: var(--accent); }
+
+  .intro-foot {
+    margin-top: 28px;
+    padding-left: 13px;
+    border-left: 1px solid var(--line-strong);
+    color: var(--faint);
+    font-family: var(--serif);
+    font-size: 13px;
+    line-height: 1.8;
+    max-width: 33ch;
+  }
+  .intro-foot strong { color: var(--muted); font-weight: 400; }
+
+  .workspace {
+    min-width: 0;
+    animation: rise .7s .18s var(--ease) both;
+  }
+
+  .tool-panel {
+    position: relative;
+    display: block;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-paper);
+    overflow: hidden;
+    animation: panelIn .38s var(--ease) both;
+  }
+  .tool-panel::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(178,58,34,.075);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 21px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(242,237,227,.42);
+  }
+  .panel-kicker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    min-width: 0;
+  }
+  .panel-kicker::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .panel-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .02em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .panel-status .mini-seal {
+    padding: 3px 6px;
+    border: 1px solid rgba(178,58,34,.34);
+    border-radius: 2px;
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: .08em;
+  }
+
+  .panel-body {
+    position: relative;
+    z-index: 1;
+    padding: clamp(22px, 3.2vw, 36px);
+  }
+
+  .field-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field-label .field-hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .02em;
+    text-transform: none;
+    color: var(--faint);
+  }
+
+  .textarea-wrap { border-bottom: 1px solid var(--line-strong); transition: border-color .2s; }
+  .textarea-wrap:focus-within { border-color: var(--accent); }
+  #ttsText {
+    display: block;
+    width: 100%;
+    min-height: 196px;
+    padding: 3px 0 16px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    resize: vertical;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: clamp(18px, 1.5vw, 22px);
+    line-height: 1.86;
+    letter-spacing: .005em;
+  }
+  #ttsText::placeholder { color: #7a7060; opacity: 1; }
+
+  .text-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+  }
+  .text-meta-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .char-count { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .char-count.is-over { color: var(--accent); }
+  .inline-error { margin: 8px 0 0; color: var(--accent); font-size: 12px; line-height: 1.6; }
+
+  .link-btn {
+    appearance: none;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    padding: 2px 0;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .04em;
+    transition: color .2s, border-color .2s;
+  }
+  .link-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .link-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .link-btn.is-accent { color: var(--accent); }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1.08fr 1.24fr .86fr;
+    gap: 18px;
+    align-items: end;
+    margin-top: 25px;
+  }
+  .control { min-width: 0; }
+  .control-label {
+    display: block;
+    margin-bottom: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: "⌄";
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-58%);
+    color: var(--muted);
+    pointer-events: none;
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+  select, .text-input {
+    display: block;
+    width: 100%;
+    height: 42px;
+    padding: 0 22px 0 0;
+    appearance: none;
+    border: 0;
+    border-bottom: 1px solid var(--line-strong);
+    border-radius: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 14px;
+    transition: border-color .2s;
+  }
+  select { cursor: pointer; }
+  .text-input { cursor: text; padding-right: 0; }
+  .text-input::placeholder { color: #7a7060; opacity: 1; }
+  select:focus, .text-input:focus { border-color: var(--accent); }
+
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 42px;
+    border-bottom: 1px solid var(--line-strong);
+    transition: border-color .2s;
+  }
+  .speed-row:focus-within { border-color: var(--accent); }
+  #speedRange {
+    flex: 1;
+    min-width: 0;
+    height: 18px;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  #speedRange::-webkit-slider-runnable-track {
+    height: 1px;
+    background: var(--line-strong);
+  }
+  #speedRange::-webkit-slider-thumb {
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -5.5px;
+    border: 2px solid var(--surface);
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  #speedRange::-moz-range-track { height: 1px; background: var(--line-strong); }
+  #speedRange::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--surface);
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .speed-value {
+    flex: none;
+    min-width: 38px;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    margin-top: 27px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .action-note {
+    max-width: 34ch;
+    margin: 0;
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .primary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 20px;
+    appearance: none;
+    border: 0;
+    border-radius: 2px;
+    background: var(--accent);
+    color: #fff8f0;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .035em;
+    white-space: nowrap;
+    transition: background .2s, transform .2s var(--ease), opacity .2s;
+  }
+  .primary-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+  .primary-btn:active { transform: translateY(0); }
+  .primary-btn:disabled { opacity: .4; transform: none; }
+  .primary-btn .btn-arrow { font-family: var(--mono); font-weight: 300; font-size: 16px; }
+  .primary-btn .btn-cost {
+    padding-left: 10px;
+    border-left: 1px solid rgba(255,248,240,.3);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .primary-btn.is-loading { pointer-events: none; }
+  .primary-btn.is-loading .btn-arrow { animation: spin 1s linear infinite; display: inline-block; }
+
+  .secondary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 15px;
+    appearance: none;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 13px;
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  .secondary-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(178,58,34,.03); }
+
+  .player {
+    display: none;
+    margin-top: 26px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-strong);
+  }
+  .player.is-visible { display: block; animation: rise .32s var(--ease) both; }
+  .player-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 13px;
+  }
+  .player-title {
+    font-family: var(--serif);
+    font-size: 17px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .player-badge {
+    flex: none;
+    padding: 4px 7px;
+    border: 1px solid rgba(178,58,34,.3);
+    border-radius: 2px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+  }
+  .player-body { display: flex; align-items: center; gap: 15px; }
+  .play-btn {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink);
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  .play-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(178,58,34,.03); }
+  .wave {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+  }
+  .wave span {
+    flex: 1 1 2px;
+    height: var(--h, 12px);
+    min-height: 2px;
+    max-height: 40px;
+    border-radius: 1px;
+    background: var(--line-strong);
+    transition: background .12s;
+  }
+  .wave span.is-played { background: var(--accent); }
+  .player-time {
+    flex: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .icon-btn {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--muted);
+    transition: color .2s, border-color .2s;
+  }
+  .icon-btn:hover { color: var(--accent); border-color: var(--line); }
+  .player-foot {
+    margin-top: 11px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    letter-spacing: .02em;
+  }
+
+  .panel-foot {
+    padding: 12px 21px;
+    border-top: 1px solid var(--line);
+    background: rgba(242,237,227,.28);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--faint);
+  }
+  .panel-foot span:last-child { text-align: right; }
+
+  /* STT */
+  .stt-plate {
+    display: grid;
+    grid-template-columns: auto minmax(0,1fr);
+    align-items: center;
+    gap: clamp(20px, 3vw, 30px);
+    padding: clamp(18px, 2.5vw, 26px);
+    border: 1px solid var(--line);
+    background: rgba(242,237,227,.34);
+  }
+  .record-btn {
+    position: relative;
+    width: 86px;
+    height: 86px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    transition: background .25s var(--ease), color .25s, transform .25s var(--ease);
+  }
+  .record-btn::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border: 1px solid rgba(178,58,34,.22);
+    border-radius: 50%;
+    transition: border-color .2s;
+  }
+  .record-btn:hover { background: var(--accent); color: #fff8f0; transform: scale(1.015); }
+  .record-btn .stop-icon { display: none; }
+  .record-btn.is-recording { background: var(--accent); color: #fff8f0; }
+  .record-btn.is-recording::before { animation: ripple 1.8s ease-out infinite; }
+  .record-btn.is-recording .mic-icon { display: none; }
+  .record-btn.is-recording .stop-icon { display: block; }
+
+  .record-kicker {
+    margin: 0 0 7px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .record-title {
+    margin: 0 0 8px;
+    font-family: var(--serif);
+    font-size: clamp(22px, 2.2vw, 28px);
+    font-weight: 400;
+    line-height: 1.35;
+    letter-spacing: -.02em;
+  }
+  .record-desc {
+    max-width: 42ch;
+    margin: 0;
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.75;
+  }
+  .record-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 14px;
+    margin-top: 13px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+  }
+  .record-timer {
+    display: none;
+    color: var(--accent);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .record-btn.is-recording ~ .record-copy .record-timer { display: inline; }
+  .live-wave { display: none; align-items: center; gap: 2px; height: 16px; }
+  .record-btn.is-recording ~ .record-copy .live-wave { display: inline-flex; }
+  .live-wave span {
+    width: 2px;
+    height: 5px;
+    background: var(--accent);
+    animation: level 1s ease-in-out infinite alternate;
+    animation-delay: var(--d, 0s);
+  }
+
+  .drop-zone {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    width: 100%;
+    margin-top: 14px;
+    padding: 15px 18px;
+    appearance: none;
+    border: 1px dashed var(--line-strong);
+    border-radius: 2px;
+    background: transparent;
+    text-align: left;
+    color: var(--muted);
+    transition: border-color .2s, background .2s;
+  }
+  .drop-zone:hover, .drop-zone.is-dragging { border-color: var(--accent); background: rgba(178,58,34,.035); }
+  .drop-zone:disabled { opacity: .45; cursor: not-allowed; }
+  .drop-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .drop-icon { color: var(--accent); flex: none; }
+  .drop-copy { font-size: 13.5px; line-height: 1.5; }
+  .drop-copy strong { color: var(--ink); font-weight: 600; }
+  .drop-copy small {
+    display: block;
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    letter-spacing: .01em;
+  }
+  .drop-right {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: .03em;
+  }
+
+  .file-receipt {
+    display: none;
+    margin-top: 18px;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--line);
+  }
+  .file-receipt.is-visible { display: block; animation: rise .3s var(--ease) both; }
+  .receipt-grid {
+    display: grid;
+    grid-template-columns: minmax(0,1.65fr) .65fr .8fr;
+    gap: 14px;
+    align-items: end;
+  }
+  .receipt-label {
+    margin-bottom: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--faint);
+    text-transform: uppercase;
+  }
+  .receipt-value {
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .receipt-value.cost { color: var(--accent); font-size: 15px; }
+  .receipt-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 17px;
+    padding-top: 15px;
+    border-top: 1px solid var(--line);
+  }
+  .billing-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0;
+  }
+  .billing-note {
+    max-width: 40ch;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+  .billing-note strong { color: var(--ink); font-weight: 600; }
+
+  .transcript {
+    display: none;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-strong);
+  }
+  .transcript.is-visible { display: block; animation: rise .32s var(--ease) both; }
+  .transcript-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 9px;
+  }
+  .transcript-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 400;
+  }
+  .transcript-title::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--ok);
+  }
+  .transcript-actions { display: flex; align-items: center; gap: 13px; }
+  #transcriptText {
+    display: block;
+    width: 100%;
+    min-height: 126px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    outline: 0;
+    resize: vertical;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14.5px;
+    line-height: 1.9;
+    transition: border-color .2s;
+  }
+  #transcriptText:focus { border-color: var(--accent); }
+  .transcript-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 9px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--faint);
+  }
+
+  .recent {
+    position: relative;
+    z-index: 2;
+    margin-top: 34px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line-strong);
+  }
+  .recent-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+  }
+  .recent-heading {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: -.01em;
+  }
+  .ledger-sub {
+    margin: 7px 0 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: var(--faint);
+  }
+  .recent-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding-top: 5px;
+  }
+  .recent-actions .ledger-sub { margin: 0; }
+  .recent-note {
+    max-width: 46ch;
+    margin: 8px 0 0;
+    color: var(--faint);
+    font-family: var(--serif);
+    font-size: 13px;
+    line-height: 1.75;
+  }
+  .recent-kicker { display: block; }
+  .recent .ledger-list { margin-top: 13px; }
+  .ledger-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .ledger-list li { border-bottom: 1px solid var(--line); }
+  .ledger-row {
+    display: grid;
+    grid-template-columns: 22px 66px minmax(0,1fr) auto 20px;
+    gap: 11px;
+    align-items: center;
+    width: 100%;
+    padding: 14px 2px;
+    appearance: none;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    text-align: left;
+    color: var(--ink);
+    transition: background .18s, padding-left .18s;
+  }
+  .ledger-row:hover { background: rgba(178,58,34,.026); padding-left: 6px; }
+  .ledger-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .ledger-type {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ledger-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .ledger-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .ledger-arrow {
+    font-family: var(--mono);
+    color: var(--faint);
+    text-align: right;
+    transition: transform .18s, color .18s;
+  }
+  .ledger-row:hover .ledger-arrow { transform: translateX(3px); color: var(--accent); }
+  .history-empty {
+    padding: 25px 0 22px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.8;
+  }
+  .history-empty .link-btn { margin-top: 4px; color: var(--accent); }
+
+  .site-foot {
+    position: relative;
+    z-index: 2;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 18px 40px 32px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 22px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.75;
+    color: var(--faint);
+  }
+  .foot-demo { color: var(--accent); }
+  .foot-right { text-align: right; }
+  .foot-right .text-link { font-size: 11px; }
+
+  dialog {
+    width: min(490px, calc(100vw - 32px));
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 30px 80px rgba(30,22,12,.22);
+  }
+  dialog::backdrop { background: rgba(26,23,17,.48); }
+  .dialog-body { padding: 25px; }
+  .dialog-eyebrow {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .dialog-title {
+    margin: 9px 0 11px;
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1.35;
+    letter-spacing: -.02em;
+  }
+  .dialog-text {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.85;
+  }
+  .cost-box {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 18px 0 4px;
+    padding: 13px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .cost-box span { font-size: 13px; color: var(--muted); }
+  .cost-box strong {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 15px 0 21px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.65;
+    cursor: pointer;
+  }
+  .consent input {
+    width: 16px;
+    height: 16px;
+    margin: 2px 0 0;
+    flex: none;
+    accent-color: var(--accent);
+  }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; }
+  .dialog-actions .primary-btn { width: auto; flex: 0 0 auto; min-height: 42px; padding: 0 16px; font-size: 13px; white-space: nowrap; }
+  .dialog-actions .secondary-btn { width: auto; flex: 0 0 auto; min-height: 42px; white-space: nowrap; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    z-index: 60;
+    max-width: calc(100vw - 32px);
+    padding: 11px 15px;
+    border-radius: 3px;
+    background: var(--ink);
+    color: #f8f2e8;
+    font-size: 13px;
+    line-height: 1.55;
+    opacity: 0;
+    transform: translate(-50%, 14px);
+    pointer-events: none;
+    transition: opacity .22s, transform .22s var(--ease);
+  }
+  .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(7px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ripple {
+    0% { transform: scale(1); opacity: .55; }
+    100% { transform: scale(1.24); opacity: 0; }
+  }
+  @keyframes level {
+    from { height: 4px; opacity: .45; }
+    to { height: 15px; opacity: 1; }
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: .35; }
+    50% { opacity: 1; }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 1120px) {
+    .side-note { display: none; }
+    .shell { gap: 44px; }
+  }
+
+  @media (max-width: 980px) {
+    .topbar { padding: 20px 24px; }
+    .brand-sub { display: none; }
+    .shell {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 34px;
+      padding: 38px 24px 44px;
+    }
+    .intro { position: relative; top: auto; }
+    .intro::before { display: none; }
+    .ghost {
+      top: -55px;
+      right: 0;
+      font-size: 210px;
+    }
+    h1 {
+      max-width: 12em;
+      font-size: clamp(40px, 7.4vw, 58px);
+    }
+    .lede { max-width: 48ch; }
+    .rate-strip { max-width: 560px; }
+    .modes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 620px;
+      margin-top: 27px;
+    }
+    .mode-tab {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
+      gap: 4px;
+      padding: 14px 14px 15px;
+      border-bottom: 1px solid var(--line);
+    }
+    .mode-tab:first-child { border-right: 1px solid var(--line); }
+    .mode-tab::before {
+      top: auto;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+    .mode-tab[aria-selected="true"]::before { transform: scaleX(1); }
+    .mode-tab:hover { padding-left: 14px; }
+    .mode-index { display: none; }
+    .mode-name { font-size: 18px; }
+    .mode-name small { font-size: 11px; }
+    .mode-arrow { display: none; }
+    .intro-foot { max-width: 48ch; }
+    .recent { margin-top: 28px; }
+    .site-foot { padding: 17px 24px 28px; }
+  }
+
+  @media (max-width: 640px) {
+    .topbar {
+      padding: 15px 18px;
+      gap: 12px;
+    }
+    .seal { width: 29px; height: 29px; font-size: 17px; }
+    .wordmark { font-size: 21px; }
+    .top-actions { gap: 11px; }
+    .demo-chip { padding: 5px 7px; letter-spacing: .03em; }
+    .demo-chip .chip-long { display: none; }
+    .shell { padding: 28px 18px 36px; gap: 28px; }
+    .ghost { top: -25px; right: -6px; font-size: 175px; }
+    h1 {
+      margin-top: 21px;
+      font-size: clamp(36px, 10.8vw, 47px);
+      line-height: 1.1;
+      letter-spacing: -.05em;
+    }
+    .eyebrow { font-size: 11px; letter-spacing: .13em; }
+    .lede { font-size: 14px; line-height: 1.8; }
+    .rate-strip { grid-template-columns: 1fr; margin-top: 24px; }
+    .rate-cell { padding: 12px 0; }
+    .rate-cell + .rate-cell {
+      padding-left: 0;
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+    .rate-value { font-size: 16px; }
+    .modes { margin-top: 23px; }
+    .mode-tab { padding: 13px 11px 14px; }
+    .mode-name { font-size: 17px; }
+    .mode-name small { font-size: 10.5px; letter-spacing: .04em; white-space: nowrap; }
+    .mode-extra { display: none; }
+    .intro-foot { display: none; }
+
+    .panel-head {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 5px;
+      padding: 12px 15px;
+    }
+    .panel-status { padding-left: 14px; }
+    .panel-body { padding: 20px 15px; }
+    .panel-foot {
+      flex-direction: column;
+      gap: 3px;
+      padding: 11px 15px;
+    }
+    .panel-foot span:last-child { text-align: left; }
+
+    #ttsText { min-height: 164px; font-size: 17px; line-height: 1.8; }
+    .text-meta { align-items: flex-start; flex-direction: column; gap: 6px; }
+    .controls { grid-template-columns: 1fr; gap: 13px; margin-top: 21px; }
+    .action-row { align-items: stretch; flex-direction: column; gap: 15px; margin-top: 22px; }
+    .action-note { max-width: none; }
+    .primary-btn { width: 100%; }
+    .player-top { align-items: flex-start; }
+    .player-body { gap: 9px; }
+    .play-btn { width: 44px; height: 44px; }
+    .wave { gap: 2px; }
+    .player-time { font-size: 11px; }
+    .icon-btn { width: 36px; height: 36px; }
+
+    .stt-plate {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 15px;
+      padding: 21px 15px;
+      text-align: center;
+    }
+    .record-btn { width: 78px; height: 78px; }
+    .record-desc { max-width: none; font-size: 13px; }
+    .record-meta { justify-content: center; }
+    .drop-zone {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 9px;
+      padding: 14px;
+    }
+    .drop-right { padding-left: 28px; }
+    .receipt-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .receipt-name-cell { grid-column: 1 / -1; }
+    .receipt-actions { align-items: stretch; flex-direction: column; }
+    .receipt-actions .primary-btn { width: 100%; }
+    .billing-note { max-width: none; }
+    .transcript-head { align-items: flex-start; flex-direction: column; gap: 8px; }
+    .transcript-actions { gap: 14px; }
+    .transcript-foot { flex-direction: column; gap: 3px; }
+    #transcriptText { font-size: 14px; }
+
+    .recent { margin-top: 24px; padding-top: 18px; }
+    .recent-head { gap: 10px; }
+    .recent-heading { font-size: 21px; }
+    .recent-actions { gap: 10px; padding-top: 2px; }
+    .recent-note { font-size: 12.5px; margin-top: 6px; }
+    .recent-kicker { display: none; }
+    .ledger-row {
+      grid-template-columns: 20px minmax(0,1fr) auto;
+      grid-template-areas:
+        "num type meta"
+        "num text text";
+      row-gap: 3px;
+      column-gap: 9px;
+      padding: 13px 0;
+    }
+    .ledger-num { grid-area: num; align-self: start; }
+    .ledger-type { grid-area: type; }
+    .ledger-text { grid-area: text; font-size: 13px; }
+    .ledger-meta { grid-area: meta; font-size: 11px; }
+    .ledger-arrow { display: none; }
+    .ledger-row:hover { padding-left: 0; }
+
+    .site-foot {
+      padding: 15px 18px 25px;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .foot-right { text-align: left; }
+    .dialog-body { padding: 21px 19px; }
+    .dialog-title { font-size: 23px; }
+    .toast { bottom: 16px; }
+  }
+
+  @media (max-width: 390px) {
+    .top-actions .text-link { display: none; }
+    .brand { gap: 9px; }
+    .wordmark { font-size: 20px; }
+    h1 { font-size: 35px; }
+    .mode-name { font-size: 16px; }
+    .mode-name small { font-size: 10.5px; }
+    .panel-status { font-size: 10.5px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="side-note" aria-hidden="true">VOICE — TEXT — MI-MO</div>
+
+<header class="topbar">
+  <a class="brand" href="#stt" aria-label="声息，返回语音转文字">
+    <span class="seal" aria-hidden="true">声</span>
+    <span class="brand-copy">
+      <span class="wordmark">声息</span>
+      <span class="brand-sub">Voice / Text Desk</span>
+    </span>
+  </a>
+  <div class="top-actions">
+    <span class="demo-chip" title="这是界面原型，不会调用真实 API">
+      <span class="dot" aria-hidden="true"></span>
+      DEMO<span class="chip-long">&nbsp;· 未接入 API</span>
+    </span>
+    <button class="text-link" type="button" id="infoBtn">说明</button>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="intro" aria-labelledby="pageTitle">
+    <span class="ghost" aria-hidden="true">声</span>
+    <p class="eyebrow">Private voice desk · 2026</p>
+    <h1 id="pageTitle">把声音<br>留成文字，<br><em>也让文字</em><br>重新发声。</h1>
+    <p class="lede">一个只服务 MiMo 的私人语音工作台。转录按量计费，合成限时免费；所有历史留在本机。</p>
+
+    <div class="rate-strip" aria-label="服务与计费概览">
+      <div class="rate-cell">
+        <div class="rate-key">TTS / 合成</div>
+        <div class="rate-value">限时免费<small>MiMo TTS · 以官方为准</small></div>
+      </div>
+      <div class="rate-cell">
+        <div class="rate-key">ASR / 转写</div>
+        <div class="rate-value">¥0.5 <small>每小时 · 单次 5 分钟</small></div>
+      </div>
+    </div>
+
+    <nav class="modes" role="tablist" aria-label="语音工作模式">
+      <button
+        class="mode-tab"
+        role="tab"
+        id="tab-stt"
+        aria-selected="true"
+        aria-controls="panel-stt"
+        tabindex="0"
+        type="button">
+        <span class="mode-index">01</span>
+        <span class="mode-name">语音转文字<small>SPEECH → TEXT <span class="mode-extra">· 5 MIN</span></small></span>
+        <span class="mode-arrow" aria-hidden="true">→</span>
+      </button>
+      <button
+        class="mode-tab"
+        role="tab"
+        id="tab-tts"
+        aria-selected="false"
+        aria-controls="panel-tts"
+        tabindex="-1"
+        type="button">
+        <span class="mode-index">02</span>
+        <span class="mode-name">文字转语音<small>TEXT → SPEECH <span class="mode-extra">· 1,000 CHARS</span></small></span>
+        <span class="mode-arrow" aria-hidden="true">→</span>
+      </button>
+    </nav>
+
+    <p class="intro-foot"><strong>声音是第二种笔迹。</strong><br>这里不保存你的音频，只留下你愿意留下的文字。</p>
+  </section>
+
+  <section class="workspace">
+    <!-- STT -->
+    <article class="tool-panel" id="panel-stt" role="tabpanel" aria-labelledby="tab-stt" tabindex="0">
+      <header class="panel-head">
+        <span class="panel-kicker">Transcribe / 转写台</span>
+        <span class="panel-status">MiMo ASR · 5 MIN <span class="mini-seal">演示</span></span>
+      </header>
+
+      <div class="panel-body">
+        <div class="stt-plate">
+          <button
+            class="record-btn"
+            type="button"
+            id="recordBtn"
+            aria-pressed="false"
+            aria-label="开始录音">
+            <svg class="mic-icon" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"></path>
+              <path d="M5 11a7 7 0 0 0 14 0"></path>
+              <path d="M12 18v3"></path>
+              <path d="M8.5 21h7"></path>
+            </svg>
+            <svg class="stop-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+            </svg>
+          </button>
+
+          <div class="record-copy">
+            <p class="record-kicker">01 — 录音或上传</p>
+            <h2 class="record-title" id="recordTitle">让声音落成文字。</h2>
+            <p class="record-desc" id="recordDesc">按下录音，或把一段音频拖进来。第一版单次最长 5 分钟，转写会按 MiMo ASR ¥0.5/小时计费。</p>
+            <p class="sr-only" id="recordStatus" aria-live="polite"></p>
+            <div class="record-meta">
+              <span class="record-timer" id="recordTimer">00:00</span>
+              <span class="live-wave" aria-hidden="true">
+                <span style="--d:0s"></span><span style="--d:.08s"></span><span style="--d:.16s"></span>
+                <span style="--d:.24s"></span><span style="--d:.32s"></span><span style="--d:.4s"></span>
+                <span style="--d:.48s"></span><span style="--d:.56s"></span><span style="--d:.64s"></span>
+                <span style="--d:.72s"></span><span style="--d:.8s"></span><span style="--d:.88s"></span>
+              </span>
+              <span>mp3 · wav · m4a · webm</span>
+              <span>≤ 25MB</span>
+              <span>≤ 5:00</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="drop-zone" type="button" id="dropZone" aria-label="上传音频文件">
+          <span class="drop-left">
+            <svg class="drop-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 16V4"></path>
+              <path d="m7 9 5-5 5 5"></path>
+              <path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path>
+            </svg>
+            <span class="drop-copy">
+              <strong>或拖入一个音频文件</strong>
+              <small>文件只在本次处理中使用，不会留在服务器</small>
+            </span>
+          </span>
+          <span class="drop-right">选择文件 →</span>
+        </button>
+        <input type="file" id="fileInput" class="sr-only" accept="audio/*,.mp3,.wav,.m4a,.webm,.ogg,.flac,.mp4" aria-label="选择音频文件">
+
+        <div class="file-receipt" id="fileReceipt" aria-live="polite">
+          <div class="receipt-grid">
+            <div class="receipt-name-cell">
+              <div class="receipt-label">File / 文件</div>
+              <div class="receipt-value" id="receiptName">—</div>
+            </div>
+            <div>
+              <div class="receipt-label">Length / 时长</div>
+              <div class="receipt-value" id="receiptDuration">00:00</div>
+            </div>
+            <div>
+              <div class="receipt-label">Estimate / 预估</div>
+              <div class="receipt-value cost" id="receiptCost">¥0.00</div>
+            </div>
+          </div>
+          <div class="receipt-actions">
+            <div class="billing-copy">
+              <p class="billing-note"><strong>MiMo ASR 按 ¥0.5/小时计费。</strong>金额为预估，实际以 MiMo 控制台账单为准；失败不会自动重试。</p>
+              <button class="link-btn" type="button" id="billingInfo">计费说明</button>
+            </div>
+            <button class="primary-btn" type="button" id="sttStart">
+              <span class="btn-label">开始转写</span>
+              <span class="btn-cost" id="sttStartCost">约 ¥0.01</span>
+            </button>
+          </div>
+        </div>
+
+        <section class="transcript" id="transcript" aria-labelledby="transcriptTitle">
+          <div class="transcript-head">
+            <h3 class="transcript-title" id="transcriptTitle">转写结果</h3>
+            <div class="transcript-actions">
+              <button class="link-btn" type="button" id="copyTranscript">复制</button>
+              <button class="link-btn" type="button" id="downloadTranscript">TXT</button>
+              <button class="link-btn" type="button" id="clearTranscript">清空</button>
+            </div>
+          </div>
+          <label class="sr-only" for="transcriptText">可编辑的转写文本</label>
+          <textarea id="transcriptText" spellcheck="false"></textarea>
+          <div class="transcript-foot">
+            <span id="transcriptMeta">MiMo ASR · 演示结果 · 未调用 API</span>
+            <span>转写结果需要人工核对</span>
+          </div>
+        </section>
+      </div>
+
+      <footer class="panel-foot">
+        <span>音频不会保存在本站</span>
+        <span>历史记录仅保存在这台浏览器</span>
+      </footer>
+    </article>
+
+    <!-- TTS -->
+    <article class="tool-panel" id="panel-tts" role="tabpanel" aria-labelledby="tab-tts" tabindex="0" hidden>
+      <header class="panel-head">
+        <span class="panel-kicker">Synthesize / 合成台</span>
+        <span class="panel-status">MiMo TTS · 限时免费 <span class="mini-seal">演示</span></span>
+      </header>
+
+      <div class="panel-body">
+        <h2 class="sr-only">文字转语音</h2>
+        <div class="field-label">
+          <span>Input / 文本</span>
+          <span class="field-hint">最多 1,000 字符</span>
+        </div>
+        <div class="textarea-wrap">
+          <label class="sr-only" for="ttsText">要转换为语音的文本</label>
+          <textarea id="ttsText" spellcheck="false" placeholder="把要朗读的文字放在这里。&#10;&#10;例如：晚上好，这里是声息。今天想和你聊聊，声音如何被记住。"></textarea>
+        </div>
+        <div class="text-meta">
+          <div class="text-meta-left">
+            <button class="link-btn" type="button" id="sampleBtn">试试示例</button>
+            <button class="link-btn" type="button" id="clearTextBtn">清空</button>
+          </div>
+          <span class="char-count" id="ttsCount">0 / 1,000</span>
+        </div>
+        <p class="inline-error" id="ttsError" hidden></p>
+
+        <div class="controls">
+          <div class="control">
+            <label class="control-label" for="voiceSelect">Voice / 音色</label>
+            <div class="select-wrap">
+              <select id="voiceSelect">
+                <option value="mimo_default">默认中文 · MiMo</option>
+                <option value="mia">Mia · 中文</option>
+                <option value="chloe">Chloe · 中文</option>
+                <option value="milo">Milo · 中文</option>
+                <option value="dean">Dean · 中文</option>
+                <option value="default_en">Default EN · English</option>
+              </select>
+            </div>
+          </div>
+          <div class="control">
+            <label class="control-label" for="styleInput">Style / 语气</label>
+            <input class="text-input" type="text" id="styleInput" maxlength="80" placeholder="温柔、稍慢，像深夜电台" autocomplete="off">
+          </div>
+          <div class="control">
+            <label class="control-label" for="speedRange">Speed / 语速</label>
+            <div class="speed-row">
+              <input type="range" id="speedRange" min="0.5" max="1.5" step="0.1" value="1.0" aria-describedby="speedValue">
+              <span class="speed-value" id="speedValue">1.0×</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <p class="action-note">当前由 MiMo TTS 提供，限时免费。生成后可试听并下载 MP3；若官方结束免费，以官方计费为准。</p>
+          <button class="primary-btn" type="button" id="ttsGenerate" disabled>
+            <span class="btn-label">生成语音</span>
+            <span class="btn-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+
+        <section class="player" id="player" aria-label="演示音频播放器">
+          <div class="player-top">
+            <span class="player-title" id="playerTitle">演示片段</span>
+            <span class="player-badge">DEMO AUDIO</span>
+          </div>
+          <div class="player-body">
+            <button class="play-btn" type="button" id="playBtn" aria-label="播放演示音频">
+              <svg class="play-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5.5v13l11-6.5-11-6.5Z"></path>
+              </svg>
+              <svg class="pause-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" hidden>
+                <rect x="7" y="5.5" width="3.5" height="13" rx=".5"></rect>
+                <rect x="13.5" y="5.5" width="3.5" height="13" rx=".5"></rect>
+              </svg>
+            </button>
+            <div class="wave" id="wave" aria-hidden="true"></div>
+            <span class="player-time" id="playerTime">00:00 / 00:00</span>
+            <button class="icon-btn" type="button" id="downloadAudio" aria-label="下载演示音频">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 4v11"></path>
+                <path d="m7.5 10.5 4.5 4.5 4.5-4.5"></path>
+                <path d="M5 20h14"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="player-foot">演示音频 · 未调用 MiMo API · 接入后开放 MP3 下载</div>
+        </section>
+      </div>
+
+      <footer class="panel-foot">
+        <span>文本会发送给 MiMo 用于合成</span>
+        <span>演示页只在本地模拟结果</span>
+      </footer>
+    </article>
+
+    <section class="recent" aria-labelledby="recentTitle">
+      <div class="recent-head">
+        <div>
+          <h2 class="recent-heading" id="recentTitle">Recent / 最近</h2>
+          <p class="ledger-sub recent-kicker">ONLY ON THIS DEVICE · 30 ENTRIES</p>
+        </div>
+        <div class="recent-actions">
+          <span class="ledger-sub"><span id="historyCount">3</span> ENTRIES</span>
+          <button class="link-btn" type="button" id="clearHistory">清空记录</button>
+        </div>
+      </div>
+      <p class="recent-note">每次完成的转写与合成，会像纸条一样留在这里。刷新不丢，清理即走。</p>
+      <ul class="ledger-list" id="historyList"></ul>
+      <div class="history-empty" id="historyEmpty" hidden>
+        还没有记录。完成一次转写或合成后，会在这里留下一行。
+        <button class="link-btn" type="button" id="restoreHistory">恢复示例记录 →</button>
+      </div>
+    </section>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div>
+    声息 / 界面原型 v0.1<br>
+    <span class="foot-demo">演示页面 · 未连接 MiMo API · 结果均为本地模拟</span>
+  </div>
+  <div class="foot-right">
+    语音转文字 + 文字转语音 · 个人自用<br>
+    <button class="text-link" type="button" id="footInfoBtn">隐私与计费说明</button>
+  </div>
+</footer>
+
+<dialog id="billingDialog" aria-labelledby="billingTitle">
+  <div class="dialog-body">
+    <p class="dialog-eyebrow">MiMo ASR / 计费确认</p>
+    <h2 class="dialog-title" id="billingTitle">转写会按音频时长计费。</h2>
+    <p class="dialog-text">MiMo ASR 当前价格为 ¥0.5/小时。第一版单次音频最长 5 分钟；失败不会自动重试，也不会有隐藏扣费。</p>
+    <div class="cost-box">
+      <span>本次预计</span>
+      <strong id="dialogCost">¥0.01</strong>
+    </div>
+    <label class="consent">
+      <input type="checkbox" id="billingConsent">
+      <span>我已知晓计费，并确认开始转写。此确认只保存在本机。</span>
+    </label>
+    <div class="dialog-actions">
+      <button class="secondary-btn" type="button" id="billingCancel">取消</button>
+      <button class="primary-btn" type="button" id="billingConfirm" disabled>确认并转写 →</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="infoDialog" aria-labelledby="infoTitle">
+  <div class="dialog-body">
+    <p class="dialog-eyebrow">About this prototype</p>
+    <h2 class="dialog-title" id="infoTitle">这是一张会呼吸的界面草图。</h2>
+    <p class="dialog-text">
+      当前页面是静态原型，所有转写、合成、播放与费用数字均为本地模拟，不会调用 MiMo API，也不会上传任何文件。
+      正式版计划：音频在个人服务端转为 MP3 后发送给 MiMo ASR；服务端不保存音频；历史只存在浏览器；TTS 文本会发送给 MiMo。
+    </p>
+    <div class="dialog-actions" style="margin-top:22px;">
+      <button class="secondary-btn" type="button" id="infoClose">知道了</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+  const tabs = $$('.mode-tab');
+  const panels = $$('.tool-panel');
+  const toastEl = $('#toast');
+  let toastTimer = null;
+
+  function toast(message) {
+    toastEl.textContent = message;
+    toastEl.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('is-visible'), 2800);
+  }
+
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function formatTime(totalSeconds) {
+    const seconds = Math.max(0, Math.round(Number(totalSeconds) || 0));
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
+  }
+
+  function estimateCost(seconds) {
+    return Math.max(0.01, Math.round((Number(seconds || 0) / 3600) * 0.5 * 100) / 100);
+  }
+
+  function selectTab(tab, focus = false) {
+    tabs.forEach(item => {
+      const selected = item === tab;
+      item.setAttribute('aria-selected', String(selected));
+      item.tabIndex = selected ? 0 : -1;
+      const panel = document.getElementById(item.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !selected;
+    });
+    if (focus) tab.focus();
+    const hash = tab.id.replace('tab-', '');
+    history.replaceState(null, '', `#${hash}`);
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => selectTab(tab));
+    tab.addEventListener('keydown', event => {
+      const index = tabs.indexOf(tab);
+      let nextIndex = null;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % tabs.length;
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + tabs.length) % tabs.length;
+      if (event.key === 'Home') nextIndex = 0;
+      if (event.key === 'End') nextIndex = tabs.length - 1;
+      if (nextIndex !== null) {
+        event.preventDefault();
+        selectTab(tabs[nextIndex], true);
+      }
+    });
+  });
+
+  const initialTab = location.hash === '#tts' ? $('#tab-tts') : $('#tab-stt');
+  selectTab(initialTab);
+
+  /* ---------------- TTS ---------------- */
+
+  const ttsText = $('#ttsText');
+  const ttsCount = $('#ttsCount');
+  const ttsGenerate = $('#ttsGenerate');
+  const ttsError = $('#ttsError');
+  const speedRange = $('#speedRange');
+  const speedValue = $('#speedValue');
+  const player = $('#player');
+  const playerTitle = $('#playerTitle');
+  const playerTime = $('#playerTime');
+  const playBtn = $('#playBtn');
+  const playIcon = $('.play-icon', playBtn);
+  const pauseIcon = $('.pause-icon', playBtn);
+  const wave = $('#wave');
+
+  let generating = false;
+  let playerDuration = 0;
+  let playerElapsed = 0;
+  let playerTimer = null;
+  let isPlaying = false;
+
+  const samples = {
+    tts: '晚上好，这里是声息。今天想和你聊聊，声音如何被记住。窗外的风停了一会儿，房间里只剩下翻页的声音。',
+    stt: '今天讨论了三件事：第一是下周的发布节奏，第二是接口额度和重试策略，第三是把录音整理成一份更短的说明。最后我们决定，先把最重要的部分做完，再谈其他。'
+  };
+
+  function updateTtsState() {
+    const length = ttsText.value.length;
+    ttsCount.textContent = `${length.toLocaleString('zh-CN')} / 1,000`;
+    ttsCount.classList.toggle('is-over', length > 1000);
+    const blocked = length === 0 || length > 1000 || generating;
+    ttsGenerate.disabled = blocked;
+    if (length > 1000) {
+      ttsError.textContent = '超出 1,000 字符，请删减后再生成。';
+      ttsError.hidden = false;
+    } else {
+      ttsError.hidden = true;
+    }
+  }
+
+  ttsText.addEventListener('input', updateTtsState);
+  $('#sampleBtn').addEventListener('click', () => {
+    ttsText.value = samples.tts;
+    updateTtsState();
+    ttsText.focus();
+  });
+  $('#clearTextBtn').addEventListener('click', () => {
+    ttsText.value = '';
+    updateTtsState();
+    ttsError.hidden = true;
+    ttsText.focus();
+  });
+
+  speedRange.addEventListener('input', () => {
+    speedValue.textContent = `${Number(speedRange.value).toFixed(1)}×`;
+  });
+
+  function buildWave() {
+    wave.innerHTML = '';
+    const bars = 46;
+    for (let i = 0; i < bars; i += 1) {
+      const bar = document.createElement('span');
+      const height = 6 + Math.abs(Math.sin(i * .54)) * 24 + (i % 7 === 0 ? 7 : 0);
+      bar.style.setProperty('--h', `${Math.min(38, height)}px`);
+      wave.appendChild(bar);
+    }
+  }
+
+  function updatePlayer() {
+    const total = Math.max(playerDuration, 1);
+    const progress = Math.min(1, playerElapsed / total);
+    playerTime.textContent = `${formatTime(playerElapsed)} / ${formatTime(playerDuration)}`;
+    $$('span', wave).forEach((bar, index) => {
+      bar.classList.toggle('is-played', index / wave.children.length < progress);
+    });
+  }
+
+  function stopPlayback(reset = false) {
+    isPlaying = false;
+    clearInterval(playerTimer);
+    playerTimer = null;
+    playIcon.hidden = false;
+    pauseIcon.hidden = true;
+    playBtn.setAttribute('aria-label', '播放演示音频');
+    if (reset) {
+      playerElapsed = 0;
+      updatePlayer();
+    }
+  }
+
+  function togglePlayback() {
+    if (!player.classList.contains('is-visible')) return;
+    if (isPlaying) {
+      stopPlayback();
+      return;
+    }
+    isPlaying = true;
+    playIcon.hidden = true;
+    pauseIcon.hidden = false;
+    playBtn.setAttribute('aria-label', '暂停演示音频');
+    if (playerElapsed >= playerDuration) playerElapsed = 0;
+    playerTimer = setInterval(() => {
+      playerElapsed = Math.min(playerDuration, playerElapsed + 0.2);
+      updatePlayer();
+      if (playerElapsed >= playerDuration) stopPlayback();
+    }, 200);
+  }
+
+  ttsGenerate.addEventListener('click', async () => {
+    const text = ttsText.value.trim();
+    if (!text) {
+      ttsError.textContent = '先写下要朗读的文字。';
+      ttsError.hidden = false;
+      ttsText.focus();
+      return;
+    }
+    if (text.length > 1000) return;
+
+    generating = true;
+    ttsGenerate.classList.add('is-loading');
+    ttsGenerate.disabled = true;
+    $('.btn-label', ttsGenerate).textContent = '正在合成';
+    $('.btn-arrow', ttsGenerate).textContent = '◌';
+    stopPlayback(true);
+
+    await delay(1500);
+
+    generating = false;
+    ttsGenerate.classList.remove('is-loading');
+    ttsGenerate.disabled = false;
+    $('.btn-label', ttsGenerate).textContent = '生成语音';
+    $('.btn-arrow', ttsGenerate).textContent = '→';
+
+    playerDuration = Math.max(6, Math.min(90, Math.round(text.length * 0.055)));
+    playerElapsed = 0;
+    buildWave();
+    updatePlayer();
+
+    const title = text.slice(0, 18) + (text.length > 18 ? '…' : '');
+    playerTitle.textContent = title || '演示片段';
+    player.classList.add('is-visible');
+    addHistory({
+      kind: 'tts',
+      label: '文字转语音',
+      text,
+      meta: `${historyStamp()} · ${formatTime(playerDuration)} · 免费`,
+    });
+    playBtn.focus({ preventScroll: true });
+    if (window.matchMedia('(max-width: 980px)').matches) {
+      player.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    toast('演示音频已生成 · 未调用 MiMo');
+  });
+
+  playBtn.addEventListener('click', togglePlayback);
+  $('#downloadAudio').addEventListener('click', () => {
+    toast('演示页面：接入 MiMo 后开放 MP3 下载');
+  });
+
+  /* ---------------- STT ---------------- */
+
+  const recordBtn = $('#recordBtn');
+  const recordTimer = $('#recordTimer');
+  const recordTitle = $('#recordTitle');
+  const recordDesc = $('#recordDesc');
+  const dropZone = $('#dropZone');
+  const fileInput = $('#fileInput');
+  const fileReceipt = $('#fileReceipt');
+  const receiptName = $('#receiptName');
+  const receiptDuration = $('#receiptDuration');
+  const receiptCost = $('#receiptCost');
+  const sttStart = $('#sttStart');
+  const sttStartCost = $('#sttStartCost');
+  const transcript = $('#transcript');
+  const transcriptText = $('#transcriptText');
+  const transcriptMeta = $('#transcriptMeta');
+  const billingDialog = $('#billingDialog');
+  const billingConsent = $('#billingConsent');
+  const billingConfirm = $('#billingConfirm');
+  const dialogCost = $('#dialogCost');
+  const recordStatus = $('#recordStatus');
+
+  let recording = false;
+  let recSeconds = 0;
+  let recTimer = null;
+  let pendingFile = null;
+  let transcribing = false;
+
+  function setRecordingUI(active, announce = false) {
+    recordBtn.classList.toggle('is-recording', active);
+    recordBtn.setAttribute('aria-pressed', String(active));
+    recordBtn.setAttribute('aria-label', active ? '停止录音' : '开始录音');
+    dropZone.disabled = active;
+    if (active) {
+      recordTitle.textContent = '正在听。';
+      recordDesc.textContent = '再次按下停止。演示不会调用麦克风，只模拟录音状态与计时。';
+      recordTimer.textContent = '00:00';
+      if (announce) recordStatus.textContent = '开始录音演示，计时开始。';
+    } else {
+      recordTitle.textContent = '让声音落成文字。';
+      recordDesc.textContent = '按下录音，或把一段音频拖进来。第一版单次最长 5 分钟，转写会按 MiMo ASR ¥0.5/小时计费。';
+    }
+  }
+
+  function resetTranscript() {
+    transcript.classList.remove('is-visible');
+    transcriptText.value = '';
+    transcriptMeta.textContent = 'MiMo ASR · 演示结果 · 未调用 API';
+  }
+
+  function resetReceipt() {
+    pendingFile = null;
+    fileReceipt.classList.remove('is-visible');
+    receiptName.textContent = '—';
+    receiptDuration.textContent = '00:00';
+    receiptCost.textContent = '¥0.00';
+    sttStart.disabled = false;
+    $('.btn-label', sttStart).textContent = '开始转写';
+    sttStartCost.textContent = '约 ¥0.01';
+  }
+
+  function showReceipt(name, duration) {
+    pendingFile = { name, duration };
+    fileReceipt.classList.add('is-visible');
+    receiptName.textContent = name;
+    receiptName.title = name;
+    receiptDuration.textContent = formatTime(duration);
+    receiptCost.textContent = `¥${estimateCost(duration).toFixed(2)}`;
+    sttStartCost.textContent = `约 ¥${estimateCost(duration).toFixed(2)}`;
+    sttStart.disabled = false;
+    $('.btn-label', sttStart).textContent = '开始转写';
+    resetTranscript();
+  }
+
+  function startRecording() {
+    recording = true;
+    recSeconds = 0;
+    resetReceipt();
+    resetTranscript();
+    setRecordingUI(true, true);
+    recTimer = setInterval(() => {
+      recSeconds += 1;
+      recordTimer.textContent = formatTime(recSeconds);
+      if (recSeconds >= 300) stopRecording(true);
+    }, 1000);
+  }
+
+  function stopRecording(hitLimit = false) {
+    if (!recording) return;
+    recording = false;
+    clearInterval(recTimer);
+    recTimer = null;
+    const duration = Math.max(4, recSeconds);
+    setRecordingUI(false);
+    recordTimer.textContent = formatTime(duration);
+    recordStatus.textContent = `录音演示结束，时长 ${formatTime(duration)}。`;
+    showReceipt('recording-demo.webm', duration);
+    toast(hitLimit ? '已达到 5 分钟上限，录音已停止' : '录音完成 · 演示音频未上传');
+  }
+
+  recordBtn.addEventListener('click', () => {
+    if (recording) stopRecording(false);
+    else startRecording();
+  });
+
+  function openBillingDialog() {
+    if (!pendingFile) {
+      toast('先选择一段音频');
+      return;
+    }
+    billingConsent.checked = false;
+    billingConfirm.disabled = true;
+    dialogCost.textContent = `¥${estimateCost(pendingFile.duration).toFixed(2)}`;
+    billingDialog.showModal();
+  }
+
+  billingConsent.addEventListener('change', () => {
+    billingConfirm.disabled = !billingConsent.checked;
+  });
+  $('#billingCancel').addEventListener('click', () => billingDialog.close());
+  billingDialog.addEventListener('click', event => {
+    if (event.target === billingDialog) billingDialog.close();
+  });
+  billingConfirm.addEventListener('click', () => {
+    if (!billingConsent.checked) return;
+    localStorage.setItem('shengxi-billing-ack', '1');
+    billingDialog.close();
+    runTranscription();
+  });
+
+  async function runTranscription() {
+    if (!pendingFile || transcribing) return;
+    transcribing = true;
+    sttStart.disabled = true;
+    $('.btn-label', sttStart).textContent = '正在转写';
+    sttStartCost.textContent = '请稍候…';
+    resetTranscript();
+
+    await delay(1750);
+
+    transcriptText.value = samples.stt;
+    transcriptMeta.textContent = `MiMo ASR · ${formatTime(pendingFile.duration)} · 演示结果 · 未调用 API`;
+    transcript.classList.add('is-visible');
+    transcribing = false;
+    sttStart.disabled = false;
+    $('.btn-label', sttStart).textContent = '重新转写';
+    sttStartCost.textContent = `约 ¥${estimateCost(pendingFile.duration).toFixed(2)}`;
+    transcriptText.focus({ preventScroll: true });
+    addHistory({
+      kind: 'stt',
+      label: '语音转文字',
+      text: transcriptText.value,
+      meta: `${historyStamp()} · ${formatTime(pendingFile.duration)} · ¥${estimateCost(pendingFile.duration).toFixed(2)}`,
+    });
+    if (window.matchMedia('(max-width: 980px)').matches) {
+      transcript.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    toast('演示转写完成 · 未调用 MiMo');
+  }
+
+  sttStart.addEventListener('click', () => {
+    if (!pendingFile) {
+      toast('先录音或选择一个音频文件');
+      return;
+    }
+    if (localStorage.getItem('shengxi-billing-ack') === '1') {
+      runTranscription();
+    } else {
+      openBillingDialog();
+    }
+  });
+
+  $('#billingInfo').addEventListener('click', openBillingDialog);
+
+  dropZone.addEventListener('click', () => {
+    if (!recording) fileInput.click();
+  });
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (file) handleFile(file);
+    fileInput.value = '';
+  });
+
+  function handleFile(file) {
+    if (recording) {
+      toast('请先停止录音');
+      return;
+    }
+    const isAudio = file.type.startsWith('audio/') || /\.(mp3|wav|m4a|webm|ogg|flac|mp4)$/i.test(file.name);
+    if (!isAudio) {
+      toast('请选择 mp3、wav、m4a 等音频文件');
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      toast('文件超过 25MB 上限，请压缩后再试');
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    const audio = new Audio();
+    audio.preload = 'metadata';
+    audio.onloadedmetadata = () => {
+      const duration = audio.duration;
+      URL.revokeObjectURL(url);
+      if (!Number.isFinite(duration) || duration <= 0) {
+        toast('无法读取音频时长，请换一个文件');
+        return;
+      }
+      if (duration > 300) {
+        toast(`音频 ${formatTime(duration)}，超过单次 5 分钟上限`);
+        return;
+      }
+      showReceipt(file.name, duration);
+      toast('音频已就绪 · 演示不会上传');
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      toast('无法读取这个音频文件，请换一个格式');
+    };
+    audio.src = url;
+  }
+
+  ['dragenter', 'dragover'].forEach(type => {
+    dropZone.addEventListener(type, event => {
+      event.preventDefault();
+      if (!recording) dropZone.classList.add('is-dragging');
+    });
+  });
+  ['dragleave', 'dragend'].forEach(type => {
+    dropZone.addEventListener(type, () => dropZone.classList.remove('is-dragging'));
+  });
+  dropZone.addEventListener('drop', event => {
+    event.preventDefault();
+    dropZone.classList.remove('is-dragging');
+    if (recording) return;
+    const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  $('#copyTranscript').addEventListener('click', async () => {
+    if (!transcript.classList.contains('is-visible') || !transcriptText.value) {
+      toast('还没有可复制的转写结果');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(transcriptText.value);
+      toast('转写结果已复制');
+    } catch (error) {
+      transcriptText.select();
+      toast('已选中文本，请按 Ctrl / Cmd + C 复制');
+    }
+  });
+
+  $('#downloadTranscript').addEventListener('click', () => {
+    if (!transcript.classList.contains('is-visible') || !transcriptText.value) {
+      toast('还没有可下载的转写结果');
+      return;
+    }
+    const blob = new Blob([transcriptText.value], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'shengxi-transcript-demo.txt';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1200);
+    toast('演示 TXT 已下载');
+  });
+
+  $('#clearTranscript').addEventListener('click', () => {
+    resetTranscript();
+    resetReceipt();
+    recordTimer.textContent = '00:00';
+    toast('已清空本次结果');
+  });
+
+  /* ---------------- History ---------------- */
+
+  const historySeed = [
+    {
+      kind: 'stt',
+      label: '语音转文字',
+      text: '今天讨论了三件事：发布节奏、接口额度，还有下周的录音计划。',
+      meta: '10-25 14:32 · 03:12 · ¥0.03'
+    },
+    {
+      kind: 'tts',
+      label: '文字转语音',
+      text: '产品介绍口播稿 · 默认中文',
+      meta: '10-25 11:08 · 00:18 · 免费'
+    },
+    {
+      kind: 'stt',
+      label: '语音转文字',
+      text: '采访片段：关于声音与记忆的关系。',
+      meta: '10-24 21:16 · 01:47 · ¥0.01'
+    }
+  ];
+  const HISTORY_STORAGE_KEY = 'shengxi-demo-history-v1';
+  let historyItems = loadHistoryItems();
+  const historyList = $('#historyList');
+  const historyEmpty = $('#historyEmpty');
+  const clearHistoryBtn = $('#clearHistory');
+  const historyCount = $('#historyCount');
+
+  function loadHistoryItems() {
+    try {
+      const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .filter(item => item && typeof item.kind === 'string' && typeof item.text === 'string' && typeof item.meta === 'string')
+            .slice(0, 30);
+        }
+      }
+    } catch (error) {
+      // localStorage can be unavailable in private or restricted contexts.
+    }
+    return historySeed.map(item => ({ ...item }));
+  }
+
+  function persistHistory() {
+    try {
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyItems));
+    } catch (error) {
+      // The prototype remains usable without persistence.
+    }
+  }
+
+  function historyStamp() {
+    const now = new Date();
+    const pad = value => String(value).padStart(2, '0');
+    return `${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+
+  function addHistory(item) {
+    historyItems.unshift(item);
+    if (historyItems.length > 30) historyItems.length = 30;
+    renderHistory();
+  }
+
+  function renderHistory() {
+    historyList.innerHTML = '';
+    historyItems.forEach((item, index) => {
+      const li = document.createElement('li');
+      const button = document.createElement('button');
+      button.className = 'ledger-row';
+      button.type = 'button';
+      button.setAttribute('aria-label', `打开演示记录：${item.text}`);
+
+      const num = document.createElement('span');
+      num.className = 'ledger-num';
+      num.textContent = String(index + 1).padStart(2, '0');
+
+      const type = document.createElement('span');
+      type.className = 'ledger-type';
+      type.textContent = item.kind.toUpperCase();
+
+      const text = document.createElement('span');
+      text.className = 'ledger-text';
+      text.textContent = item.text;
+
+      const meta = document.createElement('span');
+      meta.className = 'ledger-meta';
+      meta.textContent = item.meta;
+
+      const arrow = document.createElement('span');
+      arrow.className = 'ledger-arrow';
+      arrow.textContent = '→';
+      arrow.setAttribute('aria-hidden', 'true');
+
+      button.append(num, type, text, meta, arrow);
+      button.addEventListener('click', () => loadHistoryItem(item));
+      li.appendChild(button);
+      historyList.appendChild(li);
+    });
+    historyEmpty.hidden = historyItems.length > 0;
+    historyCount.textContent = String(historyItems.length);
+    clearHistoryBtn.disabled = historyItems.length === 0;
+    clearHistoryBtn.style.opacity = historyItems.length === 0 ? '.4' : '1';
+    persistHistory();
+  }
+
+  function loadHistoryItem(item) {
+    if (item.kind === 'tts') {
+      selectTab($('#tab-tts'));
+      stopPlayback(true);
+      player.classList.remove('is-visible');
+      ttsText.value = item.text;
+      updateTtsState();
+      ttsText.focus({ preventScroll: true });
+      toast('已载入演示记录到合成台');
+      return;
+    }
+    selectTab($('#tab-stt'));
+    resetReceipt();
+    transcriptText.value = item.text;
+    transcriptMeta.textContent = `MiMo ASR · ${item.meta} · 演示记录`;
+    transcript.classList.add('is-visible');
+    transcriptText.focus({ preventScroll: true });
+    recordTimer.textContent = '00:00';
+    toast('已载入演示记录到转写台');
+  }
+
+  clearHistoryBtn.addEventListener('click', () => {
+    historyItems = [];
+    renderHistory();
+    toast('演示记录已清空');
+  });
+
+  $('#restoreHistory').addEventListener('click', () => {
+    historyItems = historySeed.map(item => ({ ...item }));
+    renderHistory();
+    toast('示例记录已恢复');
+  });
+
+  /* ---------------- Dialogs & misc ---------------- */
+
+  const infoDialog = $('#infoDialog');
+  function openInfo() {
+    infoDialog.showModal();
+  }
+  $('#infoBtn').addEventListener('click', openInfo);
+  $('#footInfoBtn').addEventListener('click', openInfo);
+  $('#infoClose').addEventListener('click', () => infoDialog.close());
+  infoDialog.addEventListener('click', event => {
+    if (event.target === infoDialog) infoDialog.close();
+  });
+
+  window.addEventListener('hashchange', () => {
+    const target = location.hash === '#tts' ? $('#tab-tts') : $('#tab-stt');
+    selectTab(target);
+  });
+
+  updateTtsState();
+  buildWave();
+  updatePlayer();
+  renderHistory();
+  setRecordingUI(false);
+})();
+</script>
+</body>
+</html>
