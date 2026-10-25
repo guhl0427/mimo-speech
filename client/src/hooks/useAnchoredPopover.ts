@@ -8,7 +8,12 @@ export type PopoverPlacement = {
   maxHeight: number;
 };
 
-export function useAnchoredPopover<T extends HTMLElement>(minWidth: number) {
+export type PopoverAlign = "start" | "end";
+
+export function useAnchoredPopover<T extends HTMLElement>(
+  minWidth: number,
+  align: PopoverAlign = "start",
+) {
   const [open, setOpen] = useState(false);
   const [placement, setPlacement] = useState<PopoverPlacement | null>(null);
   const anchorRef = useRef<T | null>(null);
@@ -24,10 +29,16 @@ export function useAnchoredPopover<T extends HTMLElement>(minWidth: number) {
       Math.max(rect.width, minWidth),
       Math.max(280, window.innerWidth - 24),
     );
-    const left = Math.min(
-      Math.max(12, rect.left),
-      Math.max(12, window.innerWidth - width - 12),
-    );
+    const left =
+      align === "end"
+        ? Math.max(
+            12,
+            Math.min(rect.right - width, window.innerWidth - width - 12),
+          )
+        : Math.min(
+            Math.max(12, rect.left),
+            Math.max(12, window.innerWidth - width - 12),
+          );
     const spaceBelow = window.innerHeight - rect.bottom - 14;
     const spaceAbove = rect.top - 14;
     const openUp = spaceBelow < 260 && spaceAbove > spaceBelow;

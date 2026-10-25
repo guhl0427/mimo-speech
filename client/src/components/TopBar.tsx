@@ -1,5 +1,6 @@
 import { Settings } from "lucide-react";
 import type { AppConfig } from "../types";
+import { ThemeMenu } from "./ThemeMenu";
 
 type Props = {
   config: AppConfig;
@@ -53,6 +54,7 @@ export function TopBar({ config, loading, error, onSettings, onInfo }: Props) {
           <span className="dot" aria-hidden="true" />
           {status.label}
         </span>
+        <ThemeMenu />
         <button
           className="text-link settings-link"
           type="button"
@@ -60,7 +62,7 @@ export function TopBar({ config, loading, error, onSettings, onInfo }: Props) {
           aria-label="打开 MiMo Key 设置"
         >
           <Settings size={14} aria-hidden="true" />
-          设置
+          <span className="settings-label">设置</span>
         </button>
         <button className="text-link" type="button" onClick={onInfo}>
           说明
