@@ -43,6 +43,7 @@ export function VoiceSelect({ voices, value, onChange, labelledBy }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const pressedWhileOpen = useRef(false);
   const {
     open,
     placement,
@@ -51,7 +52,7 @@ export function VoiceSelect({ voices, value, onChange, labelledBy }: Props) {
     popoverRef,
     openPopover,
     close,
-  } = useAnchoredPopover<HTMLDivElement>(320);
+  } = useAnchoredPopover<HTMLDivElement>(240);
   const baseId = useId();
   const listId = `${baseId}-listbox`;
 
@@ -74,6 +75,12 @@ export function VoiceSelect({ voices, value, onChange, labelledBy }: Props) {
   function handleOpen() {
     setActiveIndex(selectedIndex);
     openPopover();
+  }
+
+  function toggle() {
+    if (open || pressedWhileOpen.current) closeAndFocus();
+    else handleOpen();
+    pressedWhileOpen.current = false;
   }
 
   function choose(voice: Voice) {
@@ -151,7 +158,10 @@ export function VoiceSelect({ voices, value, onChange, labelledBy }: Props) {
         aria-expanded={open}
         aria-controls={open ? listId : undefined}
         aria-labelledby={`${labelledBy} ${baseId}-value`}
-        onClick={() => (open ? closeAndFocus() : handleOpen())}
+        onPointerDown={() => {
+          pressedWhileOpen.current = open;
+        }}
+        onClick={toggle}
         onKeyDown={onTriggerKeyDown}
       >
         <span

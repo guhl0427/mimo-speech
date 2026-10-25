@@ -51,6 +51,10 @@
 
   ::selection { background: var(--accent-soft); color: var(--accent-dark); }
   button, input, select, textarea { font: inherit; color: inherit; }
+  button, input, select, textarea, a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
   button { cursor: pointer; }
   button:disabled { cursor: not-allowed; }
   svg { display: block; }
@@ -589,7 +593,7 @@
     gap: 9px;
     width: 100%;
     height: 42px;
-    padding: 0 1px;
+    padding: 0 8px 0 1px;
     appearance: none;
     border: 0;
     border-bottom: 1px solid var(--line-strong);
@@ -599,13 +603,17 @@
     text-align: left;
     transition: border-color .2s, background .2s;
   }
-  .voice-trigger:hover,
   .voice-trigger[aria-expanded="true"] {
     border-color: var(--accent);
     background: linear-gradient(to top, rgba(178,58,34,.045), transparent 72%);
-  }
-  .voice-trigger[aria-expanded="true"] {
     box-shadow: inset 0 -1px 0 var(--accent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .voice-trigger:hover {
+      border-color: var(--accent);
+      background: linear-gradient(to top, rgba(178,58,34,.045), transparent 72%);
+    }
+    .voice-trigger:hover .voice-chevron { color: var(--accent); }
   }
   .voice-badge,
   .voice-option-badge {
@@ -653,9 +661,6 @@
     flex: none;
     color: var(--faint);
     transition: transform .2s var(--ease), color .2s;
-  }
-  .voice-trigger:hover .voice-chevron {
-    color: var(--accent);
   }
   .voice-trigger[aria-expanded="true"] .voice-chevron {
     transform: rotate(180deg);
@@ -792,9 +797,11 @@
     transform: translateY(-50%);
     transition: color .2s, background .2s;
   }
-  .style-preset-trigger:hover {
-    color: var(--accent);
-    background: rgba(178,58,34,.05);
+  @media (hover: hover) and (pointer: fine) {
+    .style-preset-trigger:hover {
+      color: var(--accent);
+      background: rgba(178,58,34,.05);
+    }
   }
   .style-field.is-open .style-preset-trigger { color: var(--accent); }
   .style-preset-trigger svg { transition: transform .2s var(--ease); }
@@ -1701,7 +1708,7 @@
     #ttsText { min-height: 164px; font-size: 17px; line-height: 1.8; }
     .text-meta { align-items: flex-start; flex-direction: column; gap: 6px; }
     .controls { grid-template-columns: 1fr; gap: 13px; margin-top: 21px; }
-    .voice-trigger { height: 44px; }
+    .voice-trigger { height: 44px; padding-right: 12px; }
     .voice-popover,
     .style-popover { padding: 10px; }
     .voice-option { min-height: 52px; padding: 7px 8px; }
@@ -1750,7 +1757,6 @@
     .transcript-head { align-items: flex-start; flex-direction: column; gap: 8px; }
     .transcript-actions { gap: 14px; }
     .transcript-foot { flex-direction: column; gap: 3px; }
-    #transcriptText { font-size: 14px; }
 
     .recent { margin-top: 24px; padding-top: 18px; }
     .recent-head { gap: 10px; }
@@ -1783,6 +1789,11 @@
     .dialog-body { padding: 21px 19px; }
     .dialog-title { font-size: 23px; }
     .toast { bottom: 16px; }
+  }
+
+  /* iOS Safari auto-zooms when a focused form control is below 16px. */
+  @media (pointer: coarse) {
+    select, .text-input, #transcriptText { font-size: 16px; }
   }
 
   @media (max-width: 390px) {

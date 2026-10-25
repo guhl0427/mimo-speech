@@ -3,7 +3,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type FocusEvent,
   type KeyboardEvent,
 } from "react";
 import { createPortal } from "react-dom";
@@ -86,6 +85,7 @@ const PRESET_GROUPS = [
 export function StyleField({ value, onChange, maxLength, inputId }: Props) {
   const [activeGroup, setActiveGroup] = useState(PRESET_GROUPS[0].id);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pressedWhileOpen = useRef(false);
   const {
     open,
     placement,
@@ -94,7 +94,7 @@ export function StyleField({ value, onChange, maxLength, inputId }: Props) {
     popoverRef,
     openPopover,
     close,
-  } = useAnchoredPopover<HTMLDivElement>(380);
+  } = useAnchoredPopover<HTMLDivElement>(240);
   const baseId = useId();
   const popoverId = `${baseId}-style-popover`;
 
@@ -125,8 +125,9 @@ export function StyleField({ value, onChange, maxLength, inputId }: Props) {
   }
 
   function toggleOpen() {
-    if (open) closeAndEdit();
+    if (open || pressedWhileOpen.current) close();
     else openPopover();
+    pressedWhileOpen.current = false;
   }
 
   function onTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
@@ -140,18 +141,9 @@ export function StyleField({ value, onChange, maxLength, inputId }: Props) {
     if (event.key === "Escape") {
       event.preventDefault();
       closeAndEdit();
+    } else if (event.key === "Tab") {
+      close();
     }
-  }
-
-  function onPopoverBlur(event: FocusEvent<HTMLDivElement>) {
-    const next = event.relatedTarget as Node | null;
-    if (
-      next &&
-      (popoverRef.current?.contains(next) || triggerRef.current?.contains(next))
-    ) {
-      return;
-    }
-    close();
   }
 
   return (
@@ -176,6 +168,9 @@ export function StyleField({ value, onChange, maxLength, inputId }: Props) {
         aria-controls={open ? popoverId : undefined}
         aria-label={open ? "关闭语气预设" : "打开语气预设"}
         title="语气预设"
+        onPointerDown={() => {
+          pressedWhileOpen.current = open;
+        }}
         onClick={toggleOpen}
         onKeyDown={onTriggerKeyDown}
       >
@@ -199,7 +194,6 @@ export function StyleField({ value, onChange, maxLength, inputId }: Props) {
                 maxHeight: placement.maxHeight,
               }}
               onKeyDown={onPopoverKeyDown}
-              onBlur={onPopoverBlur}
             >
               <div className="style-popover-head">
                 <span className="style-popover-title">
